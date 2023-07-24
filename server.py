@@ -1,6 +1,8 @@
 import socket
 import threading
 from queue import Queue
+from lib import parse_message, Tokens, send, send_all
+import time
 
 HOST = "127.0.0.1"
 PORT = 7070
@@ -68,23 +70,42 @@ if __name__ == "__main__":
     # lobby loop
     host_voted = False
     all_ready = False
+    players_ready = 0
+    votes = [0] * 5
+    host = -1
     while not (all_ready and host_voted):
         message = message_queue.get()
         print(message)
 
-        # application layer protocol for lobby (parse tokens)
-        # ...
+        token, data = parse_message(message)
 
-        for client in client_sockets:
-            # send data to all clients
-            pass
+        # application layer protocol for lobby (parse tokens)
+        match token:
+            case Tokens.Player_Join:
+                # Assign player number to client and prompt to ready up
+                send(client_sockets[-1], f"{Tokens.Player_Number} {len(client_sockets) - 1}")
+                time.sleep(0.1) # temporary workaround to split messages
+                send(client_sockets[-1], Tokens.Ready_Up)
+            case Tokens.Ready_Up:
+                # Handles players readying up
+                players_ready += 1
+                if players_ready == len(client_sockets) and len(client_sockets) > 2:
+                    all_ready = True
+                    send_all(client_sockets, f"{Tokens.Begin_Vote} {len(client_sockets)}")
+            case Tokens.Vote_Host:
+                # Handles votes for host
+                votes[int(data)] += 1
+                if sum(votes) == len(client_sockets):
+                    host_voted = True
+                    host = votes.index(max(votes))
+                    send_all(client_sockets, f"{Tokens.Host_Choice} {host}")
 
     # close ability to connect
     recieve_connections_thread.stop()
     recieve_connections_thread.join()
 
     # send info to clients that main game has started
-    # ...
+    send_all(client_sockets, f"{Tokens.Message} GAME STARTED.")
 
     # main game loop
     game_loop = True
