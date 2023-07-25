@@ -4,6 +4,7 @@ from queue import Queue
 
 HOST = "127.0.0.1"
 PORT = 7070
+NUM_PLAYERS = 5
 
 # Thread that deals with listening to clients
 def listening_thread(client_socket, addr, message_queue):
@@ -11,6 +12,7 @@ def listening_thread(client_socket, addr, message_queue):
     with client_socket:
         while True:
             message = client_socket.recv(BUFFER_SIZE).decode("utf8")
+
             print(f"Recieved message from {addr}")
             message_queue.put(message)
 
@@ -51,6 +53,12 @@ class Recieve_Connection_Thread(threading.Thread):
         self.stop_connections = True
         socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((HOST, PORT))
 
+class Player:
+    def __init__(self, id, score):
+        self.id = id
+        self.score = score
+        self.isHost = False
+    
 
 if __name__ == "__main__":
     # setup server socket
@@ -74,6 +82,22 @@ if __name__ == "__main__":
 
         # application layer protocol for lobby (parse tokens)
         # ...
+        
+        tokens = message.split
+
+        host_votes = [0] * NUM_PLAYERS
+        player_voted = [False] * NUM_PLAYERS
+
+        if (tokens[0] == "Vote_Host"):  # example message format: Vote_Host <P_ID> <vote_ID>
+            P_ID = tokens[1]
+            vote_ID = tokens[2]
+
+            ## TODO: check if P_ID is valid (player exists)
+            player_voted[P_ID] = True
+            host_votes[vote_ID] += 1
+
+        # TODO: when all players have finished voting, calculate final Host_choice and send to client
+        # then set Player(Host_Choice).isHost = True         
 
         for client in client_sockets:
             # send data to all clients
