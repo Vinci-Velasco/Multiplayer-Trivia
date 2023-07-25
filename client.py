@@ -9,10 +9,23 @@ PORT = 7070
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as my_socket:
     my_socket.connect((HOST, PORT))
 
+    index = 0
     while True:
-        time.sleep(5)
+        time.sleep(3)
         my_socket.send("hello".encode("utf8"))
 
         BUFFER_SIZE = 1024
+   
         data = my_socket.recv(BUFFER_SIZE).decode("utf8")
         print(f"Recived: {data}")
+      
+
+
+        #on 5th or 7th loop client can choose to ready up (only here for testing)
+        if(index == 5):
+            userTestInput = input("would you like to ready up? ('y' or 'n'): ")
+
+            if(userTestInput == "y"):
+                my_socket.send("Ready_Up-3-parm".encode("utf8"))
+
+        index += 1
