@@ -21,16 +21,19 @@ def connect(address):
 
 def main():
     st.title('CMPT371 Project: Multiplayer Trivia Game')
-    input = st.text_input("Enter Server IP")
+    server = st.text_input("Enter Server IP")
+    port = st.text_input("Enter Port")
 
-    if input:
-        with st.spinner(text=f"Now connecting to {input}"):
+    # TODO: CHANGE TO 'AND' WHEN READY
+    if server or port:
+        with st.spinner(text=f"Now connecting to {server}"):
             time.sleep(1)
             
         st.success('Connection OK')
         init()
         time.sleep(1)
-        st.session_state.server = input
+        st.session_state.port = port
+        st.session_state.server = server
         st.experimental_rerun()
 
 if __name__ == '__main__':
