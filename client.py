@@ -24,10 +24,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as my_socket:
         data = my_socket.recv(BUFFER_SIZE).decode("utf8")
         print(f"Recived: {data}")
      
-
-
-
-
         #on 5th loop client can choose to ready up (only here for testing change as needed)
         if(index == 5):
             userTestInput = input("would you like to ready up? ('y' or 'n'): ")

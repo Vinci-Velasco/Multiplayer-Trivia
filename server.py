@@ -179,10 +179,6 @@ if __name__ == "__main__":
         # then set Player(Host_Choice).isHost = True  
 
 
-        elif (tokens[0] == "Host_Choice"):
-            pass
-
-
         elif (tokens[0] == "Ready_Up"):
 
 
@@ -228,6 +224,8 @@ if __name__ == "__main__":
 
 
         elif (tokens[0] == "Host_Choice"):
+            pass
+        elif (tokens[0] == "Answer"):
             pass
 
 
