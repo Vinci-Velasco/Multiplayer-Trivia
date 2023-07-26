@@ -1,25 +1,17 @@
 import streamlit as st
 from src.player import Player
 
-online = {}
+players = {}
 cols = {}
 
-MIN_PLAYERS = 3
-
 def init(post_init=False):
-    nplayers = st.session_state.num_players 
-
     if not post_init: # TODO: receive from server
         st.session_state.i_voted = False
         st.session_state.im_ready = False
-        st.session_state.votes_per_player = nplayers * [0]
         st.session_state.total_votes = 0
         st.session_state.host_id = None
 
     st.session_state.game_start = False
-
-    # e.g. online['p1'] = True
-    online = dict.fromkeys(range(1, nplayers), False)
 
 def init_cols():
     global cols
@@ -32,6 +24,11 @@ def init_cols():
         cols[3].write("**Vote Host**")
     else:
         cols[3].write("**Ready Up**")
+
+def update_players():
+    global players
+    player_list = st.session_state.player_list
+    players = player_list
 
 def ready_up():
     cols[3].button('Ready')        
@@ -46,7 +43,7 @@ def find_host():
     ready_up()
 
 def vote_counter():
-    nplayers = st.session_state.num_players
+    nplayers = len(players)
     total_votes = st.session_state.total_votes
 
     if (total_votes <= nplayers):
@@ -59,23 +56,19 @@ def vote_callback():
     st.session_state.total_votes += 1
 
 def list_players():
-    nplayers = st.session_state.num_players
-
-    for p in range(1, nplayers+1):
-        online[p] = st.session_state.online_players[p-1]
-
-        if p == st.session_state.my_id:
-            cols[1].write(f"Player {p} (You)")
+    for p in players:
+        if p.is_me:
+            cols[1].write(f"Player {p.id} (You)")
         else:
-            cols[1].write(f"Player {p}")
+            cols[1].write(f"Player {p.id}")
 
-        if online[p]:
-            cols[2].write("Ready!")
+        if p.voted == False:
+            cols[2].write("Voting...")
         else:
-            cols[2].write("Waiting for connection...")
+            cols[2].write('Waiting...')
 
         if 'ready_up' not in st.session_state:
-            cols[3].button('Vote',  disabled=(not online[p]), on_click=vote_callback, key=f"vote_btn{p}")
+            cols[3].button('Vote',  disabled=(st.session_state.i_voted), on_click=vote_callback, key=f"vote_btn{p.id}")
 
 def main():
     st.title('Lobby')
@@ -83,6 +76,7 @@ def main():
         init()
     
     init_cols()
+    update_players()
     list_players()
 
     if 'ready_up' not in st.session_state:

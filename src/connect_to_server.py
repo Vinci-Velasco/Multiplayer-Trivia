@@ -5,14 +5,12 @@ from src.player import Player
 def init_game():
     # TODO: get this info from the server. for now just hardcode self as Player 1
     my_id = 1
-    min_players = 3
-    max_players = 5
-
+    p1 = Player(my_id, is_me=True)
+    st.session_state.min_players = 3
+    st.session_state.max_players = 5
+    
     st.session_state['my_id'] = my_id
-    st.session_state['num_players'] = max_players
-    st.session_state['online_players'] = max_players * [False]
-
-    st.session_state.online_players[my_id-1] = True
+    st.session_state['player_list'] = [p1]
 
 def connect(address):
     # TODO make this connect to server.py, check if valid connection

@@ -10,6 +10,8 @@ def init():
 # note: use streamlit.empty to generate a container?  https://discuss.streamlit.io/t/display-a-text-variable-that-periodically-changing/11531
 
 def main():
+    init();
+
     if 'server' not in st.session_state:
         connect_to_server.main()
     elif 'lobby' not in st.session_state:
