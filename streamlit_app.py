@@ -14,7 +14,7 @@ def main():
 
     if 'server' not in st.session_state:
         connect_to_server.main()
-    elif 'lobby' not in st.session_state:
+    elif 'game_start' not in st.session_state:
         lobby.main()
     elif 'game_over' not in st.session_state:
         game.main()
