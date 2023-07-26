@@ -1,16 +1,18 @@
 import streamlit as st
 import time
+from src.player import Player
 
-def init():
-    # TODO: get this info from the server. for now just hardcode as Player 1
-    my_id = 0
-    num_players = 5
+def init_game():
+    # TODO: get this info from the server. for now just hardcode self as Player 1
+    my_id = 1
+    min_players = 3
+    max_players = 5
 
     st.session_state['my_id'] = my_id
-    st.session_state['num_players'] = num_players
-    st.session_state['online_players'] = num_players * [False]
+    st.session_state['num_players'] = max_players
+    st.session_state['online_players'] = max_players * [False]
 
-    st.session_state.online_players[my_id] = True
+    st.session_state.online_players[my_id-1] = True
 
 def connect(address):
     # TODO make this connect to server.py, check if valid connection
@@ -30,7 +32,7 @@ def main():
             time.sleep(1)
             
         st.success('Connection OK')
-        init()
+        init_game()
         time.sleep(1)
         st.session_state.port = port
         st.session_state.server = server
