@@ -5,7 +5,7 @@ from queue import Queue
 
 HOST = "127.0.0.1"
 PORT = 7070
-
+NUM_PLAYERS = 5
 
 
 # Thread that deals with listening to clients
@@ -84,7 +84,7 @@ def allPlayersReady(ready_clients):
     return proceedOrNot
 
 
-#Token functions-------------------------------------------------------------------------------------
+#Token functions------USE if needed-------------------------------------------------------------------------------
 
 def readyUp(ready_clients, playerNumber, client_sockets):
 
@@ -108,6 +108,13 @@ def buzzing():
 #Token functions-------------------------------------------------------------------------------------
 
 
+class Player:
+    def __init__(self, id, score):
+        self.id = id
+        self.score = score
+        self.isHost = False
+
+
 if __name__ == "__main__":
     # setup server socket
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # SOCK_STREAM = TCP
@@ -129,25 +136,35 @@ if __name__ == "__main__":
     # lobby loop
     host_voted = False
     all_ready = False
+    host_votes = [0] * NUM_PLAYERS
+    player_voted = [False] * NUM_PLAYERS
     while not (all_ready and host_voted):
 
-
-        message, addr = message_queue.get()
-    
+        #gets the message and its coresponding sender adderess 
+        message, addr = message_queue.get()    
         print(message)
 
         # application layer protocol for lobby (parse tokens)
     
     #Token Parse------------------------------------------------------------------
-        splitMessage = message.split('-')
+    #splitMessage[1] should be the data 
+        tokens = message.split('-')
 
-        if (splitMessage[0] == "Vote_Host"):
-               pass
+        if (tokens[0] == "Vote_Host"):
+            P_ID = tokens[1]
+            vote_ID = tokens[2]
 
-        elif (splitMessage[0] == "Vote_Host"):
+            ## TODO: check if P_ID is valid (player exists)
+            player_voted[P_ID] = True
+            host_votes[vote_ID] += 1
+
+        # TODO: when all players have finished voting, calculate final Host_choice and send to client
+        # then set Player(Host_Choice).isHost = True  
+
+        elif (tokens[0] == "Host_Choice"):
             pass
 
-        elif (splitMessage[0] == "Ready_Up"):
+        elif (tokens[0] == "Ready_Up"):
 
             ready_Clients = readyUp(ready_clients, playerNumber[addr][0], client_sockets)
             
@@ -181,14 +198,14 @@ if __name__ == "__main__":
          # application layer protocol for game loop (parse tokens)
          # ...
 
-        splitMessage = message.split('-')
+        tokens = message.split('-')
 
        #Token Parse------------------------------------------------------------------
 
-        if (splitMessage[0] == "Buzzing"):
+        if (tokens[0] == "Buzzing"):
                pass
 
-        elif (splitMessage[0] == "Host_Choice"):
+        elif (tokens[0] == "Host_Choice"):
             pass
 
         #Token Parse------------------------------------------------------------------
