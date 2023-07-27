@@ -1,40 +1,43 @@
 import streamlit as st
 import time
+import socket
+import traceback
 from src.player import Player
 
-def init_game():
-    # TODO: get this info from the server. for now just hardcode self as Player 1
-    my_id = 1
-    p1 = Player(my_id, is_me=True)
-    st.session_state.min_players = 3
-    st.session_state.max_players = 5
+#### Test connection
+def test_connect(host, port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as my_socket:
+        try:
+            my_socket.connect((host, port))
+        except ConnectionRefusedError as e:
+           return e
+        finally:
+            my_socket.close()
+        return "success"
+
+def exit():
+    time.sleep(1)
+    st.experimental_rerun()
     
-    st.session_state['my_id'] = my_id
-    st.session_state['player_list'] = [p1]
-
-def connect(address):
-    # TODO make this connect to server.py, check if valid connection
-    if address=="valid":
-        return True
-    else:
-        return False
-
+#### Connect to server from Streamlit
 def main():
     st.title('CMPT371 Project: Multiplayer Trivia Game')
     server = st.text_input("Enter Server IP")
     port = st.text_input("Enter Port")
 
-    # TODO: CHANGE TO 'AND' WHEN READY
-    if server or port:
+    if server and port: # check user input
+        port_num = int(port)
         with st.spinner(text=f"Now connecting to {server}"):
+            connection = test_connect(server, port_num)
             time.sleep(1)
-            
-        st.success('Connection OK')
-        init_game()
-        time.sleep(1)
-        st.session_state.port = port
-        st.session_state.server = server
-        st.experimental_rerun()
 
+        if not connection == "success":
+            st.exception(connection)
+        else:
+            st.success('Connection OK')
+            st.session_state.port = port_num
+            st.session_state.server = server
+            exit()
+        
 if __name__ == '__main__':
     main()

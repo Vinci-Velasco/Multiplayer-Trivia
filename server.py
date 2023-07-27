@@ -17,8 +17,6 @@ def listening_thread(client_socket, addr, message_queue):
             message_queue.put((message, addr))
             client_socket.send("Server acknowledges your message\n".encode())
          
-
-
 # Custom thread class that creates new threads once connections come in
 class Recieve_Connection_Thread(threading.Thread):
     def __init__(self, server, message_queue):
