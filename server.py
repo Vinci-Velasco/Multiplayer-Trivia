@@ -16,7 +16,7 @@ def listening_thread(client_socket, addr, message_queue):
             print(f"Recieved message from {addr}")
             message_queue.put((message, addr))
             client_socket.send("Server acknowledges your message\n".encode())
-         
+
 
 
 # Custom thread class that creates new threads once connections come in
@@ -56,9 +56,9 @@ class Recieve_Connection_Thread(threading.Thread):
             client_socket.send(f"Connection to server established. You're Player #{connections}\n".encode("utf8"))
 
 
-           
+
             for client_socket in client_sockets:
-               
+
                 client_socket.send(str(f"Players: {client_addrs} are in the lobby!\n").encode("utf8"))
 
 
@@ -77,17 +77,17 @@ def allPlayersReady(ready_clients):
     proceedOrNot = True
 
     for allClients in client_sockets:
-           
+
         if(ready_clients[index] == False):
 
 
             for client in client_sockets:
                 # send data to all clients
-               
+
                 #commented out until a solution for slowing down the rate of sending is found
                 #client.send(str(f"Waiting on Player {index + 1} to ready up!\n").encode("utf8"))
                 proceedOrNot = False
-               
+
         index += 1
     return proceedOrNot
 
@@ -110,8 +110,13 @@ def voteHost():
     pass
 
 
-def answer():
-    pass
+# Send answer from player to host so the host can confirm if the answer is correct
+def answer(player_num, message, host_socket):
+    #TODO check if the person who sent the answer token actually has the lock (do once buzz has been implemented)
+    #...
+
+    msg_to_send = f"Player #{player_num} answered: {message}"
+    host_socket.send(msg_to_send.encode("utf8"))
 
 
 def buzzing():
@@ -154,12 +159,12 @@ if __name__ == "__main__":
 
 
         #gets the message and its coresponding sender adderess
-        message, addr = message_queue.get()    
+        message, addr = message_queue.get()
         print(message)
 
 
         # application layer protocol for lobby (parse tokens)
-   
+
         #Token Parse------------------------------------------------------------------
         #splitMessage[1] should be the data
         tokens = message.split('-')
@@ -176,21 +181,21 @@ if __name__ == "__main__":
 
 
         # TODO: when all players have finished voting, calculate final Host_choice and send to client
-        # then set Player(Host_Choice).isHost = True  
+        # then set Player(Host_Choice).isHost = True
 
 
         elif (tokens[0] == "Ready_Up"):
 
 
             ready_Clients = readyUp(ready_clients, playerNumber[addr][0], client_sockets)
-           
+
     #Token Parse------------------------------------------------------------------
 
 
         all_ready = allPlayersReady(ready_clients)
         # If all players are ready move on to the main game loop
         if all_ready == True:
- 
+
             break
 
     # close ability to connect
@@ -226,7 +231,9 @@ if __name__ == "__main__":
         elif (tokens[0] == "Host_Choice"):
             pass
         elif (tokens[0] == "Answer"):
-            pass
+            host_socket = "placholder" # the host being selected has not been implemented yet
+            player_num = playerNumber[addr][0]
+            answer(player_num, tokens[1], host_socket)
 
 
         #Token Parse------------------------------------------------------------------
