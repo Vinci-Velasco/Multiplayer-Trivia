@@ -3,7 +3,6 @@
 
 import json
 from pathlib import Path
-import random
 
 JSON_PATH='src/test_questions.json'
 
@@ -45,7 +44,3 @@ def qb_from_json():
         qb.append(question)
 
     return qb
-
-# for testing
-def random_question(qb):
-    return random.choice(qb)

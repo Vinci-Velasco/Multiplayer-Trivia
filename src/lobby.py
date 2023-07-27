@@ -12,22 +12,24 @@ def init(post_init=False):
         st.session_state.total_ready = 0
         st.session_state.host_id = None
 
-
 #### Draw UI components
 # Called on each page update
 def init_cols():
     global cols
     c1, c2, c3, c4 = st.columns(4, gap="large")        
     cols = { 1: c1, 2: c2, 3: c3, 4: c4 }
-    cols[1].write("**Players**")
-    cols[2].write("**Status**")
+    # cols[1].write("**Players**")
+    # cols[2].write("**Status**")
+    cols[1].subheader('Players')
+    cols[2].subheader('Status')
 
     if 'ready_up' not in st.session_state:
-        cols[3].write("**Vote Host**")
+        # cols[3].write("**Vote Host**")
+        cols[3].subheader('Vote Host')
     else:
-        cols[3].write("**Ready Up**")
+        cols[3].subheader("Ready Up")
 
-    # List each connected player
+    # List each connected
     for p in players:
         if p.is_me:
             cols[1].write(f"Player {p.id} (You)")
