@@ -27,6 +27,7 @@ def init_cols():
     else:
         cols[3].write("**Ready Up**")
 
+    # List each connected player
     for p in players:
         if p.is_me:
             cols[1].write(f"Player {p.id} (You)")
@@ -65,7 +66,9 @@ def ready_up():
     if (total_ready <= nplayers):
         cols[4].write(f"Ready: {total_ready}/{nplayers}")
     else:
+        # Start game
         st.session_state.game_start = True
+        st.experimental_rerun()
 
 #### Call server to update internal states
 
@@ -82,8 +85,6 @@ def find_host():
         st.session_state.ready_up = False
         st.experimental_rerun()
     ready_up()
-
-
 
 def main():
     st.title('Lobby')
