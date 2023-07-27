@@ -5,6 +5,11 @@ import traceback
 HOST = "127.0.0.1"
 PORT = 7070
 
+def init_game(socket):
+    with socket as s:
+        s.send("Req_Data-players")
+        s.send("Req_Data-my_id")
+
 def ready_up_test():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as my_socket:
         my_socket.connect((HOST, PORT))
@@ -23,7 +28,6 @@ def ready_up_test():
             #on 5th loop client can choose to ready up (only here for testing change as needed)
             if(index == 5):
                 userTestInput = input("would you like to ready up? ('y' or 'n'): ")
-
 
                 if(userTestInput == "y"):
                     my_socket.send("Ready_Up-3-some type of data".encode("utf8"))

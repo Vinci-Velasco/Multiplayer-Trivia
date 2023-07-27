@@ -1,11 +1,19 @@
 import socket
 import threading
 import time
+import pickle
 from queue import Queue
+from src.player import Player
 
 HOST = "127.0.0.1"
 PORT = 7070
+
 NUM_PLAYERS = 5
+
+min_players = 3
+max_players = 5
+
+player_list = [] 
 
 # Thread that deals with listening to clients
 def listening_thread(client_socket, addr, message_queue):
@@ -13,16 +21,14 @@ def listening_thread(client_socket, addr, message_queue):
     with client_socket:
         while True:
             message = client_socket.recv(BUFFER_SIZE).decode("utf8")
-
+            
+            print(f"Recieved message from {addr}")
             # receive a ping
             if message == "ping":
                     client_socket.send("pong".encode('utf-8'))
-                    # client_socket.close()
-                    # break
             else:
-                print(f"Recieved message from {addr}")
                 message_queue.put((message, addr))
-                client_socket.send("Server acknowledges your message\n".encode())
+            # client_socket.send("Server acknowledges your message\n".encode())
          
 # Custom thread class that creates new threads once connections come in
 class Recieve_Connection_Thread(threading.Thread):
@@ -31,7 +37,6 @@ class Recieve_Connection_Thread(threading.Thread):
         self.server = server
         self.message_queue = message_queue
         self.stop_connections = False
-
 
     # Listens to connections and creates new threads. Closes once max connections achieved
     # or stop_connections is set to True (via the stop() method)
@@ -55,6 +60,11 @@ class Recieve_Connection_Thread(threading.Thread):
             thread.start()
             connections += 1
             playerNumber[addr] = connections, client_socket
+
+           # add a new Player object with this ID
+            global player_list
+            p = Player(connections)
+            player_list.append(p)
 
             # client_socket.send(f"Connection to server established. You're Player #{connections}\n".encode("utf8"))
 
@@ -96,7 +106,6 @@ def allPlayersReady(ready_clients):
 #Token functions------USE if needed-------------------------------------------------------------------------------
 
 def readyUp(ready_clients, playerNumber, client_sockets):
-
     ready_clients[playerNumber-1] = True
     client_sockets[playerNumber-1].send("Server Acknowlegdes Ready Up\n".encode("utf8"))
 
@@ -121,12 +130,6 @@ def buzzing():
 
 #Token functions-------------------------------------------------------------------------------------
 
-class Player:
-    def __init__(self, id, score):
-        self.id = id
-        self.score = score
-        self.isHost = False
-
 if __name__ == "__main__":
     # setup server socket
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # SOCK_STREAM = TCP
@@ -145,19 +148,18 @@ if __name__ == "__main__":
     recieve_connections_thread = Recieve_Connection_Thread(server, message_queue)
     recieve_connections_thread.start()
 
-
     # lobby loop
     host_voted = False
     all_ready = False
-    host_votes = [0] * NUM_PLAYERS
-    player_voted = [False] * NUM_PLAYERS
     while not (all_ready and host_voted):
-
-
         #gets the message and its coresponding sender adderess
         message, addr = message_queue.get()    
         print(message)
 
+        #### internal states
+        num_votes = 0
+        vote_counter = [0] * NUM_PLAYERS
+        player_list = {} 
 
         # application layer protocol for lobby (parse tokens)
    
@@ -166,14 +168,19 @@ if __name__ == "__main__":
         tokens = message.split('-')
 
 
-        if (tokens[0] == "Vote_Host"):
+        if (tokens[0] == "Req_Data"):
+            if tokens[1] == "players": # send list of online players
+                players_string = pickle.dumps(player_list)
+                
+                
+        elif (tokens[0] == "Vote_Host"):
             P_ID = tokens[1]
             vote_ID = tokens[2]
 
 
             ## TODO: check if P_ID is valid (player exists)
-            player_voted[P_ID] = True
-            host_votes[vote_ID] += 1
+            # voted_clients[P_ID] = True
+            # host_votes[vote_ID] += 1
 
 
         # TODO: when all players have finished voting, calculate final Host_choice and send to client
@@ -181,8 +188,6 @@ if __name__ == "__main__":
 
 
         elif (tokens[0] == "Ready_Up"):
-
-
             ready_Clients = readyUp(ready_clients, playerNumber[addr][0], client_sockets)
            
     #Token Parse------------------------------------------------------------------

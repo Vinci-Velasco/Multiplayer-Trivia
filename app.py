@@ -30,10 +30,10 @@ def main():
     #### connect to server
     if 'server' not in st.session_state:
         connect_to_server.main()
-    
-    # client.init_game()
+    else:
+        with st.session_state.my_socket as s:
+            client.init_game(s)
 
-    my_socket = st.session_state.my_socket 
 
     # lobby.main()
 
