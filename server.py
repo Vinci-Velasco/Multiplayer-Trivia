@@ -3,7 +3,7 @@ import threading
 import time
 import pickle
 from queue import Queue
-from src.player import Player
+# from src.player import Player
 
 HOST = "127.0.0.1"
 PORT = 7070
@@ -13,7 +13,7 @@ NUM_PLAYERS = 5
 min_players = 3
 max_players = 5
 
-player_list = [] 
+player_list = []
 
 # Thread that deals with listening to clients
 def listening_thread(client_socket, addr, message_queue):
@@ -59,12 +59,14 @@ class Recieve_Connection_Thread(threading.Thread):
                 target=listening_thread, args=(client_socket, addr, self.message_queue))
             thread.start()
             connections += 1
-            playerNumber[addr] = connections, client_socket
 
-           # add a new Player object with this ID
+           # add a new Player object with this client's ID to global player list
             global player_list
-            p = Player(connections)
+            client_id = connections
+            p = Player(client_id, client_socket, addr)
             player_list.append(p)
+
+            PlayerNumber[addr] =  client_id, client_socket
 
             # client_socket.send(f"Connection to server established. You're Player #{connections}\n".encode("utf8"))
 
@@ -82,6 +84,22 @@ class Recieve_Connection_Thread(threading.Thread):
         self.stop_connections = True
         socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((HOST, PORT))
 
+class Player():
+    def __init__(self, id, socket, addr):
+        self.id = id
+        self.socket = socket
+        self.addr = addr
+
+        # initial instance values
+        self.votes = 0
+        self.score = 0
+        self.is_host = False
+        self.already_voted = False
+
+def find_player(id):
+    for p in player_list:
+        if p.id == id:
+            return p
 
 def allPlayersReady(ready_clients):
     index = 0
@@ -104,10 +122,14 @@ def allPlayersReady(ready_clients):
 
 
 #Token functions------USE if needed-------------------------------------------------------------------------------
+def send_to_player(player, msg):
+    player.socket.send(msg.encode('utf8'))
 
-def readyUp(ready_clients, playerNumber, client_sockets):
-    ready_clients[playerNumber-1] = True
-    client_sockets[playerNumber-1].send("Server Acknowlegdes Ready Up\n".encode("utf8"))
+    # TODO: add ACK?
+
+def readyUp(ready_clients, PlayerNumber, client_sockets):
+    ready_clients[PlayerNumber-1] = True
+    client_sockets[PlayerNumber-1].send("Server Acknowlegdes Ready Up\n".encode("utf8"))
 
     return ready_clients
 
@@ -141,7 +163,8 @@ if __name__ == "__main__":
     # with listening threads and vice versa
     client_sockets = []
     client_addrs = []
-    playerNumber = {}
+    PlayerNumber = {}
+
 
     ready_clients = [False, False, False, False, False]
     message_queue = Queue() # locks are already built in to Queue class
@@ -156,10 +179,13 @@ if __name__ == "__main__":
         message, addr = message_queue.get()    
         print(message)
 
-        #### internal states
+        #### Information about the Sender
+        sender_id = PlayerNumber[addr][0]
+        sender = find_player(sender_id)
+
+        #### Internal States
         num_votes = 0
         vote_counter = [0] * NUM_PLAYERS
-        player_list = {} 
 
         # application layer protocol for lobby (parse tokens)
    
@@ -167,11 +193,17 @@ if __name__ == "__main__":
         #splitMessage[1] should be the data
         tokens = message.split('-')
 
-
+        #### Handle Data Requests from client
         if (tokens[0] == "Req_Data"):
-            if tokens[1] == "players": # send list of online players
-                players_string = pickle.dumps(player_list)
-                
+            if tokens[1] == "player_ids": # send list of online player IDs
+                player_ids = []
+                for p in player_list:
+                    player_ids.append(p.id)
+                data = pickle.dumps(player_ids) # serialize python list with pickle
+                send_to_player(sender, data)
+
+            elif tokens[1] == "my_id": # send player's own id
+                send_to_player(sender, sender_id)
                 
         elif (tokens[0] == "Vote_Host"):
             P_ID = tokens[1]
@@ -188,7 +220,7 @@ if __name__ == "__main__":
 
 
         elif (tokens[0] == "Ready_Up"):
-            ready_Clients = readyUp(ready_clients, playerNumber[addr][0], client_sockets)
+            ready_Clients = readyUp(ready_clients, PlayerNumber[addr][0], client_sockets)
            
     #Token Parse------------------------------------------------------------------
 

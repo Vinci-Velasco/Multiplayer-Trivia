@@ -7,7 +7,7 @@ PORT = 7070
 
 def init_game(socket):
     with socket as s:
-        s.send("Req_Data-players")
+        s.send("Req_Data-player_ids")
         s.send("Req_Data-my_id")
 
 def ready_up_test():
