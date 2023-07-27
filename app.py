@@ -1,14 +1,9 @@
 import streamlit as st
 from src import connect_to_server, lobby, game, scoreboard
-from client import * 
+import client
 
 HOST = "127.0.0.1"
 PORT = 7070
-
-# def init():
-#     # define initial session states
-#     st.session_state['winner'] = None
-#     st.session_state['host'] = None
 
 # def init_game():
 #     # TODO: get this info from the server. for now just hardcode self as Player 1
@@ -35,6 +30,12 @@ def main():
     #### connect to server
     if 'server' not in st.session_state:
         connect_to_server.main()
+    
+    # client.init_game()
+
+    my_socket = st.session_state.my_socket 
+
+    # lobby.main()
 
 if __name__ == '__main__':
     main()

@@ -1,19 +1,17 @@
 import streamlit as st
 import time
 import socket
-import traceback
 from src.player import Player
 
-#### Test connection
+#### Test connection by pinging the server
 def test_connect(host, port):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as my_socket:
-        try:
-            my_socket.connect((host, port))
-        except ConnectionRefusedError as e:
-           return e
-        finally:
-            my_socket.close()
-        return "success"
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.connect((host, port))
+        s.send("ping".encode('utf-8'))
+        return s.recv(1024).decode('utf-8'), s
+    except ConnectionRefusedError as e:
+        return e
 
 def exit():
     time.sleep(1)
@@ -31,12 +29,13 @@ def main():
             connection = test_connect(server, port_num)
             time.sleep(1)
 
-        if not connection == "success":
-            st.exception(connection)
+        if not connection[0] == "pong":
+            st.exception(connection[0])
         else:
             st.success('Connection OK')
             st.session_state.port = port_num
             st.session_state.server = server
+            st.session_state.my_socket = connection[1]
             exit()
         
 if __name__ == '__main__':
