@@ -96,7 +96,7 @@ class Player():
         self.is_host = False
         self.already_voted = False
 
-def find_player(id):
+def find_player(id): # return a player from player_list based on ID
     for p in player_list:
         if p.id == id:
             return p
@@ -123,7 +123,7 @@ def allPlayersReady(ready_clients):
 
 #Token functions------USE if needed-------------------------------------------------------------------------------
 def send_to_player(player, msg):
-    player.socket.send(msg.encode('utf8'))
+    player.socket.send(str(msg).encode('utf8'))
 
     # TODO: add ACK?
 
@@ -171,7 +171,7 @@ if __name__ == "__main__":
     recieve_connections_thread = Recieve_Connection_Thread(server, message_queue)
     recieve_connections_thread.start()
 
-    # lobby loop
+    #### Lobby loop ------------------------------------------------------------------
     host_voted = False
     all_ready = False
     while not (all_ready and host_voted):
@@ -184,16 +184,16 @@ if __name__ == "__main__":
         sender = find_player(sender_id)
 
         #### Internal States
-        num_votes = 0
+        total_num_votes = 0
         vote_counter = [0] * NUM_PLAYERS
 
         # application layer protocol for lobby (parse tokens)
    
-        #Token Parse------------------------------------------------------------------
+        #Token Parse
         #splitMessage[1] should be the data
         tokens = message.split('-')
 
-        #### Handle Data Requests from client
+        #### Handle Requests for Data from client
         if (tokens[0] == "Req_Data"):
             if tokens[1] == "player_ids": # send list of online player IDs
                 player_ids = []

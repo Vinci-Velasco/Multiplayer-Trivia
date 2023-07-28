@@ -5,10 +5,12 @@ import traceback
 HOST = "127.0.0.1"
 PORT = 7070
 
-def init_game(socket):
-    with socket as s:
-        s.send("Req_Data-player_ids")
-        s.send("Req_Data-my_id")
+def req_token(s, token):
+    BUFFER_SIZE = 1024
+    s.send(f"Req_Data-{token}".encode('utf8'))
+    
+    response = s.recv(BUFFER_SIZE).decode('utf8')
+    return response
 
 def ready_up_test():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as my_socket:
