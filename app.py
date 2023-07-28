@@ -1,21 +1,36 @@
+### App.py facillitates communication between Frontend, Client, and Server
+
 import streamlit as st
 from src import connect_to_server, lobby, game, scoreboard
 import client
+import pickle
+from src import player
 
 HOST = "127.0.0.1"
 PORT = 7070
 
-#### Initial game states
+#### Initialize game states
 def init_game(s):
-    # TODO: get this info from the server. for now just hardcode self as Player 1
-    # my_id = 1
-    # p1 = Player(my_id, is_me=True)
-    st.session_state.min_players = 3
-    st.session_state.max_players = 5
-    
-    st.session_state.my_id = client.req_token(s, "my_id")
-    st.session_state.players = client.req_token(s, "player_ids")
+    # Request data from client
+    my_id = int(client.req_data(s, "my_id"))
+    p_ids_data = client.req_data(s, "player_ids")
+    player_ids = pickle.loads(p_ids_data)
 
+    # Create a dict of Player objects on client side
+    players = {}
+    for p_id in player_ids:
+        if p_id == my_id:
+            players[p_id] = player.Player(p_id, is_me = True)
+        else:
+            players[p_id] = player.Player(p_id)
+    
+    # Store values into Streamlit App
+    st.session_state.my_id = my_id
+    st.session_state.players = players
+    st.session_state.player_ids = player_ids
+
+def update_players(s, data):
+    pass
 
 def gui_demo():
     if 'server' not in st.session_state:
@@ -32,11 +47,11 @@ def main():
     if 'server' not in st.session_state:
         connect_to_server.main()
     else:
-        with st.session_state.my_socket as s: 
-            while True: # While connected to the server
-                init_game(s)
-                if 'game_start' not in st.session_state:
-                    lobby.main()
+        # init_game(st.session_state.my_socket)
+        s = st.session_state.my_socket
+        if 'game_start' not in st.session_state:
+            init_game(s)
+            lobby.main()
                 
             
 

@@ -5,12 +5,15 @@ import traceback
 HOST = "127.0.0.1"
 PORT = 7070
 
-def req_token(s, token):
+def req_data(s, data):
     BUFFER_SIZE = 1024
-    s.send(f"Req_Data-{token}".encode('utf8'))
+    s.send(f"Req_Data-{data}".encode('utf8'))
     
     response = s.recv(BUFFER_SIZE).decode('utf8')
     return response
+
+def send_ack(s, data):
+    s.send(f"ACK-{data}".encode('utf8'))
 
 def ready_up_test():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as my_socket:

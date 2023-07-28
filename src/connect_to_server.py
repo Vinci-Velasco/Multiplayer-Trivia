@@ -1,7 +1,6 @@
 import streamlit as st
 import time
 import socket
-from src.player import Player
 
 #### Test connection by pinging the server
 def test_connect(host, port):
@@ -17,7 +16,7 @@ def exit():
     time.sleep(1)
     st.experimental_rerun()
     
-#### Connect to server from Streamlit
+#### Connect to server from Streamlit GUI
 def main():
     st.title('CMPT371 Project: Multiplayer Trivia Game')
     server = st.text_input("Enter Server IP")
