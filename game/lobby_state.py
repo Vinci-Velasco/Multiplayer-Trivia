@@ -1,12 +1,12 @@
 import random
 
-# Application logic for Lobby
+#### Application logic for Lobby
+# use list of Players, not Client 
 MIN_PLAYERS = 3
 
 #### Get current state of Lobby
-def get_state(clients, last_state):
-    nplayers = len(clients)
-    players = get_all_players(clients)
+def get_state(players, last_state):
+    nplayers = len(players)
 
     #### Waiting for more players to join before we can start the game
     if nplayers < MIN_PLAYERS:
@@ -15,11 +15,8 @@ def get_state(clients, last_state):
     #### Check last game state
     if last_state == "VOTE":
         # Check total amount of votes
-        total_votes = 0
-        for p in players:
-            if p.already_voted:
-                total_votes += 1
-
+        total_votes = get_total_votes(players)
+        
         if total_votes < nplayers:
             return "VOTE"
         else: # After all players have voted, next state is to choose the host
@@ -47,9 +44,7 @@ def get_state(clients, last_state):
     return "INVALID_STATE"
         
         
-def calculate_host(clients):
-    players = get_all_players(clients)
-
+def calculate_host(players):
     host = None
 
     for p in players:
@@ -61,9 +56,9 @@ def calculate_host(clients):
     
     return host
 
-def get_all_players(clients):
-    players = []
-    for c in clients.values():
-        players.append(c.player_data)
-        
-    return players
+def get_total_votes(players):
+    total_votes = 0
+    for p in players:
+        if p.already_voted:
+            total_votes +=1
+    return total_votes

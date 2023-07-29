@@ -8,25 +8,28 @@ from src import player
 HOST = "127.0.0.1"
 PORT = 7070
 
-#### Initialize game states
-def init_game(s):
+#### Initialize data upon first connection
+def init_data(s):
     # Request data from client
     my_id = int(client.req_data_string(s, "my_id"))
-    player_ids = client.req_data_object(s, "player_id_list")
+    all_players = client.req_data_object(s, "all_players_list")
+    total_votes = int(client.req_data_object(s, "total_votes"))
+    # player_ids = client.req_data_object(s, "player_id_list")
 
-    # Create a dict of Player objects on client side
+    # Create a dict of Players by ID
     players = {}
-    for p_id in player_ids:
-        p_id_int = int(p_id)
-        if p_id_int == my_id:
-            players[p_id_int] = player.Player(p_id_int, is_me = True)
-        else:
-            players[p_id_int] = player.Player(p_id_int)
+    for p in all_players:
+        p_id = int(p.id)
+        if p_id == my_id:
+            p.is_me = True
+
+        players[p_id] = p
     
     # Store values into Streamlit App
     st.session_state.my_id = my_id
     st.session_state.players = players
-    st.session_state.player_ids = player_ids
+    st.session_state.total_votes = total_votes
+    # st.session_state.player_ids = player_ids
 
 def update_players(s, data):
     pass
@@ -46,11 +49,11 @@ def main():
     if 'server' not in st.session_state:
         connect_to_server.main()
     else:
-        # init_game(st.session_state.my_socket)
+        # init_data(st.session_state.my_socket)
         s = st.session_state.my_socket
         if 'game_start' not in st.session_state:
             if 'my_id' not in st.session_state:
-                init_game(s)
+                init_data(s)
             lobby_state = client.update_lobby(s)
             if lobby_state == "VOTE":
                 pass

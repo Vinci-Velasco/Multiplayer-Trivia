@@ -4,7 +4,7 @@ import time
 import pickle
 from queue import Queue
 from src import player
-from game import lobby_state as lobby ## change back to lobby_state
+from game import lobby_state
 
 HOST = "127.0.0.1"
 PORT = 7070
@@ -92,6 +92,13 @@ class Client():
         self.socket = socket
         self.addr = addr
         self.player_data = player # use Player class from src/player.py
+
+def get_all_players():
+    all_players = []
+    for c in clients.values():
+        all_players.append(c.player_data)
+        
+    return all_players
 
 def allPlayersReady(ready_clients):
     index = 0
@@ -187,6 +194,7 @@ if __name__ == "__main__":
         #### Internal Lobby states and values
         current_state = "WAIT"
         host = None
+        total_votes = 0
 
         #### application layer protocol for lobby (Parse Tokens)
         tokens = message.split('-')
@@ -207,18 +215,27 @@ if __name__ == "__main__":
                     player_id_list.append(c.id)
                 send_data_to_client(client, data_type, player_id_list)
 
+            elif request == "all_players_list":
+                all_players = get_all_players()
+                send_data_to_client(client, data_type, all_players)
+
             # Send client's own Player object
             elif request == "my_player":
                 p_object = client.player_data
                 send_data_to_client(client, data_type, p_object)
 
+            elif request == "total_votes":
+                all_players = get_all_players()
+                total_votes = lobby_state.get_total_votes(all_players)
+                send_data_to_client(client, data_type, total_votes)
+
             if request == "lobby_state":
+                all_players = get_all_players()
                 last_state = current_state
-                current_state = lobby.get_state(clients, last_state)
+                current_state = lobby_state.get_state(all_players, last_state)
                 
                 if current_state == "FIND_HOST":
-                    host = lobby.calculate_host(clients)
-
+                    host = lobby_state.calculate_host(all_players)
                     # TODO: send host to all clients, wait for ACK from all clients
                     current_state = "HOST_FOUND"
                 elif current_state == "START_GAME":
