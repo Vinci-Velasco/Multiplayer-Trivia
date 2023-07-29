@@ -3,7 +3,6 @@
 import streamlit as st
 from src import connect_to_server, lobby, game, scoreboard
 import client
-import pickle
 from src import player
 
 HOST = "127.0.0.1"
@@ -12,17 +11,17 @@ PORT = 7070
 #### Initialize game states
 def init_game(s):
     # Request data from client
-    my_id = int(client.req_data(s, "my_id"))
-    p_ids_data = client.req_data(s, "player_ids")
-    player_ids = pickle.loads(p_ids_data)
+    my_id = int(client.req_data_string(s, "my_id"))
+    player_ids = client.req_data_object(s, "player_id_list")
 
     # Create a dict of Player objects on client side
     players = {}
     for p_id in player_ids:
-        if p_id == my_id:
-            players[p_id] = player.Player(p_id, is_me = True)
+        p_id_int = int(p_id)
+        if p_id_int == my_id:
+            players[p_id_int] = player.Player(p_id_int, is_me = True)
         else:
-            players[p_id] = player.Player(p_id)
+            players[p_id_int] = player.Player(p_id_int)
     
     # Store values into Streamlit App
     st.session_state.my_id = my_id
@@ -50,10 +49,11 @@ def main():
         # init_game(st.session_state.my_socket)
         s = st.session_state.my_socket
         if 'game_start' not in st.session_state:
-            init_game(s)
+            if 'my_id' not in st.session_state:
+                init_game(s)
             lobby.main()
-                
-            
+            ## TODO: Add way to keep checking game state from server, may need an additional thread... D:
+
 
 
     # lobby.main()

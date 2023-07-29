@@ -1,19 +1,54 @@
 import socket
 import time
+import pickle
 import traceback
 
 HOST = "127.0.0.1"
 PORT = 7070
 
-def req_data(s, data):
+#### Data Strings need to be decoded with utf8
+def req_data_string(s, string):
     BUFFER_SIZE = 1024
-    s.send(f"Req_Data-{data}".encode('utf8'))
+    s.send(f"Req_Data-String-{string}".encode('utf8'))
     
-    response = s.recv(BUFFER_SIZE).decode('utf8')
-    return response
+    string = s.recv(BUFFER_SIZE).decode('utf8')
+    return string
+
+#### Data Objects need to be serialized/deserialized with pickle
+def req_data_object(s, object):
+    BUFFER_SIZE = 1024
+    s.send(f"Req_Data-Object-{object}".encode('utf8'))
+
+    object_data = s.recv(BUFFER_SIZE)
+    object = pickle.loads(object_data)
+    return object
 
 def send_ack(s, data):
     s.send(f"ACK-{data}".encode('utf8'))
+
+def update_this_player(s):
+    # send update of this players data to server
+    pass
+
+def update_lobby(s):
+    # Ask server for current Lobby State, e.g. if we are in Voting phase or Ready Up phase...
+    current_phase = req_data_string(s, "lobby_state")
+    if current_phase == "VOTE":
+        # get vote data
+        # send ack
+        pass
+    elif current_phase == "FIND_HOST":
+        # get host data
+        # send ack
+        pass
+    elif current_phase == "READY_UP":
+        # get ready_up data
+        # send ack
+        pass
+    elif current_phase == "START_GAME":
+        # get data to start the game
+        # send ack
+        pass
 
 def ready_up_test():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as my_socket:

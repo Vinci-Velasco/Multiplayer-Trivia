@@ -18,16 +18,6 @@ def init(post_init=False):
         st.session_state.total_ready = 0
         st.session_state.host_id = None
         
-
-def vote_counter():
-    nplayers = len(players)
-    total_votes = st.session_state.total_votes
-
-    if (total_votes <= nplayers):
-        cols[4].write(f"Votes: {total_votes}/{nplayers}")
-    else:
-        find_host()
-
 def vote_callback():
     # testing
     st.session_state.total_votes += 1
@@ -35,30 +25,18 @@ def vote_callback():
 def ready_callback():
     st.session_state.total_ready += 1
 
-def ready_up():
-    nplayers = len(players)
-    total_ready = st.session_state.total_ready
-    if (total_ready <= nplayers):
-        cols[4].write(f"Ready: {total_ready}/{nplayers}")
-    else:
-        # Start game
-        start_game()
-
-#### Call server to update internal states
-
+#### Call server to update internal player states
 def update_players():
     global players
-    player_ids = st.session_state.player_ids
-    players = player_ids
+    players = st.session_state.players
 
 def find_host():
     # TODO: get host from server
     test_host = 1
     st.session_state.host_id = 1
-    if 'ready_up' not in st.session_state:
-        st.session_state.ready_up = False
+    if 'vote_over' not in st.session_state:
+        st.session_state.vote_over = True
         st.experimental_rerun()
-    ready_up()
 
 def main():
     if 'total_votes' not in st.session_state:
@@ -69,12 +47,10 @@ def main():
 
     ## Draw GUI
     global cols
-    draw_lobby(cols, players, vote_callback, ready_callback)
+    draw_lobby(cols, players, vote_callback, ready_callback, find_host)
 
-    if 'ready_up' not in st.session_state:
-        vote_counter()
-    else:
-        ready_up()
+    if 'ready_up_over' in st.session_state:
+        start_game()
 
 if __name__ == '__main__':
     main()

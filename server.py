@@ -4,6 +4,7 @@ import time
 import pickle
 from queue import Queue
 from src import player
+from game import lobby_state as lobby
 
 HOST = "127.0.0.1"
 PORT = 7070
@@ -66,7 +67,6 @@ class Recieve_Connection_Thread(threading.Thread):
             p = player.Player(client_id)
             c = Client(client_id, client_socket, addr, p)
             clients[client_id] = c
-            print(f"Added Client {client_id} to clients")
 
             PlayerNumber[addr] =  client_id, client_socket
 
@@ -91,7 +91,7 @@ class Client():
         self.id = id
         self.socket = socket
         self.addr = addr
-        self.player_data = player
+        self.player_data = player # use Player class from src/player.py
 
 def allPlayersReady(ready_clients):
     index = 0
@@ -114,13 +114,17 @@ def allPlayersReady(ready_clients):
 
 
 #Token functions------USE if needed-------------------------------------------------------------------------------
-def send_str_to_client(client, data_string):
-    print(f"Sending data string to {client.id}: {data_string}")
-    client.socket.send(str(data_string).encode('utf8'))
+def send_data_to_client(client, data_type, data):
+    # Encode String before sending
+    if tokens[1] == "String":
+        print(f"SEND {data} string to Client {client.id}: {data}")
+        client.socket.send(str(data).encode('utf8'))
 
-def send_object_to_client(client, data_object):
-    print(f"Sending data object to {client.id}")
-    client.socket.send(data_object)
+    # Serialize Object before sending            
+    elif tokens[1] == "Object":
+        print(f"SEND {data} object to Client {client.id}: {data}")
+        data_object = pickle.dumps(data)
+        client.socket.send(data_object)
 
 def print_ACK(player, ACK):
     print(f"Received ACK from Player {player.id}: {ACK}")
@@ -169,44 +173,61 @@ if __name__ == "__main__":
     recieve_connections_thread.start()
 
     #### Lobby loop ------------------------------------------------------------------
-    host_voted = False
+    host_found = False
     all_ready = False
-    while not (all_ready and host_voted):
+    while not (all_ready and host_found):
         #gets the message and its coresponding sender adderess
         message, addr = message_queue.get()    
         print(message)
 
         #### Information about the Sender
         sender_id = PlayerNumber[addr][0]
-        sender = clients[sender_id]
+        client = clients[sender_id]
 
-        #### Internal Lobby States
-        total_num_votes = 0
-        vote_counter = [0] * NUM_PLAYERS
+        #### Internal Lobby states and values
+        current_state = "WAIT"
+        host = None
 
         #### application layer protocol for lobby (Parse Tokens)
         tokens = message.split('-')
 
-        #### Handle Requests for Data from client
+        #### Handle Requests for Data from Sender
         if (tokens[0] == "Req_Data"):
-            # Send list of online Player IDS
-            if tokens[1] == "player_ids":
-                player_ids = []
-                for c in clients.values():
-                    player_ids.append(c.id)
-                # serialize python list with pickle before sending
-                list_object = pickle.dumps(player_ids)
-                send_object_to_client(sender, list_object)
+            data_type = tokens[1]
+            request = tokens[2]
 
-            # Send client's own ID
-            elif tokens[1] == "my_id":
-                send_str_to_client(sender, sender_id)
+            # Send client's own Player ID
+            if request == "my_id":
+                send_data_to_client(client, data_type, sender_id)
+
+            # Send List of online Player IDs
+            elif request == "player_id_list":
+                player_id_list = []
+                for c in clients.values():
+                    player_id_list.append(c.id)
+                send_data_to_client(client, data_type, player_id_list)
 
             # Send client's own Player object
-            elif tokens[1] == "my_player":
-                p_object = pickle.dumps(sender.player_data)
-                send_object_to_client(sender, p_object)
+            elif request == "my_player":
+                p_object = client.player_data
+                send_data_to_client(client, data_type, p_object)
 
+            if request == "lobby_state":
+                last_state = current_state
+                current_state = lobby.get_state(clients, last_state)
+                
+                if current_state == "FIND_HOST":
+                    host = lobby.calculate_host(clients)
+
+                    # TODO: send host to all clients, wait for ACK from all clients
+                    current_state = "HOST_FOUND"
+                elif current_state == "START_GAME":
+                    # TODO: break out of lobby loop and start game
+                    # Tell all clients that they can start the game
+                    pass
+
+                send_data_to_client(client, data_type, current_state)
+                    
 
         elif (tokens[0] == "Vote_Host"):
             P_ID = tokens[1]
@@ -227,7 +248,7 @@ if __name__ == "__main__":
 
         elif (tokens[0] == "ACK"):
             data = tokens[1]
-            print_ACK(sender, data)
+            print_ACK(client, data)
            
     #Token Parse------------------------------------------------------------------
 
