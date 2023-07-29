@@ -32,8 +32,8 @@ def main():
         connect_to_server.main()
     
     # client.init_game()
-
-    my_socket = st.session_state.my_socket 
+    else:
+        st.write("Connection success")
 
     # lobby.main()
 
