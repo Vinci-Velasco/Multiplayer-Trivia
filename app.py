@@ -13,7 +13,7 @@ def init_data(s):
     # Request data from client
     my_id = int(client.req_data_string(s, "my_id"))
     all_players = client.req_data_object(s, "all_players_list")
-    total_votes = int(client.req_data_object(s, "total_votes"))
+    total_votes = 0
     # player_ids = client.req_data_object(s, "player_id_list")
 
     # Create a dict of Players by ID
@@ -22,6 +22,8 @@ def init_data(s):
         p_id = int(p.id)
         if p_id == my_id:
             p.is_me = True
+        if p.already_voted:
+            total_votes += 1
 
         players[p_id] = p
     

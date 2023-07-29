@@ -14,7 +14,6 @@ def init(post_init=False):
     if not post_init: # TODO: receive from server
         st.session_state.i_voted = False
         st.session_state.im_ready = False
-        st.session_state.total_votes = 0
         st.session_state.total_ready = 0
         st.session_state.host_id = None
         
@@ -41,7 +40,7 @@ def find_host():
         st.experimental_rerun()
 
 def main(state):
-    if 'total_votes' not in st.session_state:
+    if 'i_voted' not in st.session_state:
         init()
 
     ## Update Session State

@@ -61,4 +61,5 @@ def get_total_votes(players):
     for p in players:
         if p.already_voted:
             total_votes +=1
+
     return total_votes

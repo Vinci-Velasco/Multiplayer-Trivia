@@ -224,10 +224,10 @@ if __name__ == "__main__":
                 p_object = client.player_data
                 send_data_to_client(client, data_type, p_object)
 
-            elif request == "total_votes":
-                all_players = get_all_players()
-                total_votes = lobby_state.get_total_votes(all_players)
-                send_data_to_client(client, data_type, total_votes)
+            # elif request == "total_votes":
+            #     all_players = get_all_players()
+            #     total_votes = lobby_state.get_total_votes(all_players)
+            #     send_data_to_client(client, data_type, total_votes)
 
             if request == "lobby_state":
                 all_players = get_all_players()
