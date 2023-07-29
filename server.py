@@ -4,7 +4,7 @@ import time
 import pickle
 from queue import Queue
 from src import player
-from game import lobby_state as lobby
+from game import lobby_state as lobby ## change back to lobby_state
 
 HOST = "127.0.0.1"
 PORT = 7070
@@ -116,12 +116,12 @@ def allPlayersReady(ready_clients):
 #Token functions------USE if needed-------------------------------------------------------------------------------
 def send_data_to_client(client, data_type, data):
     # Encode String before sending
-    if tokens[1] == "String":
+    if data_type == "String":
         print(f"SEND {data} string to Client {client.id}: {data}")
         client.socket.send(str(data).encode('utf8'))
 
     # Serialize Object before sending            
-    elif tokens[1] == "Object":
+    elif data_type == "Object":
         print(f"SEND {data} object to Client {client.id}: {data}")
         data_object = pickle.dumps(data)
         client.socket.send(data_object)
@@ -230,13 +230,9 @@ if __name__ == "__main__":
                     
 
         elif (tokens[0] == "Vote_Host"):
-            P_ID = tokens[1]
-            vote_ID = tokens[2]
-
-
-            ## TODO: check if P_ID is valid (player exists)
-            # voted_clients[P_ID] = True
-            # host_votes[vote_ID] += 1
+            vote_id = int(tokens[1])
+            clients[vote_id].player_data.votes += 1
+            clients[sender_id].player_data.already_voted = True
 
 
         # TODO: when all players have finished voting, calculate final Host_choice and send to client

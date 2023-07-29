@@ -63,7 +63,7 @@ def calculate_host(clients):
 
 def get_all_players(clients):
     players = []
-    for c in clients:
+    for c in clients.values():
         players.append(c.player_data)
         
     return players

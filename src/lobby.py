@@ -18,8 +18,10 @@ def init(post_init=False):
         st.session_state.total_ready = 0
         st.session_state.host_id = None
         
-def vote_callback():
-    # testing
+def vote_callback(id):
+    s = st.session_state.my_socket
+    s.send(f"Vote_Host-{id}".encode('utf8'))
+    st.session_state.i_voted = True
     st.session_state.total_votes += 1
 
 def ready_callback():
@@ -38,12 +40,13 @@ def find_host():
         st.session_state.vote_over = True
         st.experimental_rerun()
 
-def main():
+def main(state):
     if 'total_votes' not in st.session_state:
         init()
 
     ## Update Session State
     update_players()
+    
 
     ## Draw GUI
     global cols

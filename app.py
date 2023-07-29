@@ -51,7 +51,10 @@ def main():
         if 'game_start' not in st.session_state:
             if 'my_id' not in st.session_state:
                 init_game(s)
-            lobby.main()
+            lobby_state = client.update_lobby(s)
+            if lobby_state == "VOTE":
+                pass
+            lobby.main(lobby_state)
             ## TODO: Add way to keep checking game state from server, may need an additional thread... D:
 
 
