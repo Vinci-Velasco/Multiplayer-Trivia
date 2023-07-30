@@ -11,13 +11,10 @@ PORT = 7070
 
 NUM_PLAYERS = 5
 
-<<<<<<< HEAD
-=======
 min_players = 3
 max_players = 5
 
 clients = {}
->>>>>>> origin/5-request-server-data-from-clientfrontend
 
 # Thread that deals with listening to clients
 def listening_thread(client_socket, addr, message_queue):
@@ -32,7 +29,7 @@ def listening_thread(client_socket, addr, message_queue):
                     client_socket.send("pong".encode('utf-8'))
             else:
                 message_queue.put((message, addr))
-            # client_socket.send("Server acknowledges your message\n".encode())
+                client_socket.send("Server acknowledges your message\n".encode())
          
 # Custom thread class that creates new threads once connections come in
 class Recieve_Connection_Thread(threading.Thread):
@@ -79,6 +76,7 @@ class Recieve_Connection_Thread(threading.Thread):
                
             #     client_socket.send(str(f"Players: {client_addrs} are in the lobby!\n").encode("utf8"))
 
+
         print(f"Done with connections ({connections}/{MAX_CONNECTIONS})")
 
 
@@ -88,58 +86,6 @@ class Recieve_Connection_Thread(threading.Thread):
         self.stop_connections = True
         socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((HOST, PORT))
 
-<<<<<<< HEAD
-def allPlayersReady(ready_clients):
-    index = 0
-    proceedOrNot = True
-
-
-    for allClients in client_sockets:
-            
-        if(ready_clients[index] == False):
-
-            for client in client_sockets:
-                # send data to all clients
-               
-                #commented out until a solution for slowing down the rate of sending is found
-                #client.send(str(f"Waiting on Player {index + 1} to ready up!\n").encode("utf8"))
-                proceedOrNot = False
-                
-        index += 1
-    return proceedOrNot
-
-
-#Token functions------USE if needed-------------------------------------------------------------------------------
-
-def readyUp(ready_clients, playerNumber, client_sockets):
-
-    ready_clients[playerNumber-1] = True
-    client_sockets[playerNumber-1].send("Server Acknowlegdes Ready Up\n".encode("utf8"))
-
-    return ready_clients
-
-def hostChoice():
-    pass
-
-def voteHost():
-    pass
-
-def answer():
-    pass
-
-def buzzing():
-    pass
-
-#Token functions-------------------------------------------------------------------------------------
-
-
-class Player:
-    def __init__(self, id, score):
-        self.id = id
-        self.score = score
-        self.isHost = False
-
-=======
 class Client():
     def __init__(self, id, socket, addr, player):
         self.id = id
@@ -153,7 +99,6 @@ def get_all_players():
         all_players.append(c.player_data)
         
     return all_players
->>>>>>> origin/5-request-server-data-from-clientfrontend
 
 def allPlayersReady(ready_clients):
     index = 0
@@ -226,13 +171,8 @@ if __name__ == "__main__":
     # data structures to hold client sockets and message queue so main can communicate with listening threads and vice versa
     client_sockets = []
     client_addrs = []
-<<<<<<< HEAD
-
-    playerNumber = {}
-=======
     PlayerNumber = {}
 
->>>>>>> origin/5-request-server-data-from-clientfrontend
 
     ready_clients = [False, False, False, False, False]
     message_queue = Queue() # locks are already built in to Queue class
@@ -242,18 +182,8 @@ if __name__ == "__main__":
     #### Lobby loop ------------------------------------------------------------------
     host_found = False
     all_ready = False
-<<<<<<< HEAD
-    host_votes = [0] * NUM_PLAYERS
-    player_voted = [False] * NUM_PLAYERS
-    while not (all_ready and host_voted):
-
-
-
-=======
     while not (all_ready and host_found):
->>>>>>> origin/5-request-server-data-from-clientfrontend
         #gets the message and its coresponding sender adderess
-
         message, addr = message_queue.get()    
         print(message)
 
@@ -261,24 +191,10 @@ if __name__ == "__main__":
         sender_id = PlayerNumber[addr][0]
         client = clients[sender_id]
 
-<<<<<<< HEAD
-        # application layer protocol for lobby (parse tokens)
-
-   
-        #Token Parse------------------------------------------------------------------
-        #splitMessage[1] should be the data
-        tokens = message.split('-')
-
-
-        if (tokens[0] == "Vote_Host"):
-            P_ID = tokens[1]
-            vote_ID = tokens[2]
-=======
         #### Internal Lobby states and values
         current_state = "WAIT"
         host = None
         total_votes = 0
->>>>>>> origin/5-request-server-data-from-clientfrontend
 
         #### application layer protocol for lobby (Parse Tokens)
         tokens = message.split('-')
@@ -356,25 +272,6 @@ if __name__ == "__main__":
  
             break
 
-
-        elif (tokens[0] == "Ready_Up"):
-
-            ready_Clients = readyUp(ready_clients, playerNumber[addr][0], client_sockets)
-            
-
-        
-        
-    #Token Parse------------------------------------------------------------------
-
-        all_ready = allPlayersReady(ready_clients)
-        # If all players are ready move on to the main game loop
-        if all_ready == True:
-  
-            break
-
-         
-                
-
     # close ability to connect
     recieve_connections_thread.stop()
     recieve_connections_thread.join()
@@ -391,10 +288,8 @@ if __name__ == "__main__":
         print(message)
 
 
-
          # application layer protocol for game loop (parse tokens)
          # ...
-
 
 
         tokens = message.split('-')
@@ -414,4 +309,3 @@ if __name__ == "__main__":
 
 
         #Token Parse------------------------------------------------------------------
-

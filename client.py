@@ -1,11 +1,7 @@
-
-# PLACEHOLDER - just for testing
-
 import socket
 import time
 import pickle
 import traceback
-
 
 HOST = "127.0.0.1"
 PORT = 7070
@@ -53,7 +49,6 @@ def update_lobby(s):
         # get data to start the game
         # send ack
         pass
-
 
 def ready_up_test():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as my_socket:

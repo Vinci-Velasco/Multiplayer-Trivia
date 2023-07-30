@@ -50,12 +50,7 @@ def main():
     #### connect to server
     if 'server' not in st.session_state:
         connect_to_server.main()
-<<<<<<< HEAD
-    
-    # client.init_game()
-    else:
-        st.write("Connection success")
-=======
+
     else:
         # init_data(st.session_state.my_socket)
         s = st.session_state.my_socket
@@ -69,7 +64,7 @@ def main():
             ## TODO: Add way to keep checking game state from server, may need an additional thread... D:
 
 
->>>>>>> origin/5-request-server-data-from-clientfrontend
+
 
     # lobby.main()
 
