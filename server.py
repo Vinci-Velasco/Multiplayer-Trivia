@@ -6,10 +6,7 @@ from queue import Queue
 HOST = "127.0.0.1"
 PORT = 7070
 NUM_PLAYERS = 5
-<<<<<<< HEAD
 
-=======
->>>>>>> main
 
 # Thread that deals with listening to clients
 def listening_thread(client_socket, addr, message_queue):
@@ -17,13 +14,6 @@ def listening_thread(client_socket, addr, message_queue):
     with client_socket:
         while True:
             message = client_socket.recv(BUFFER_SIZE).decode("utf8")
-<<<<<<< HEAD
-            print(f"Recieved message from {addr}")
-            message_queue.put((message, addr))
-            client_socket.send("Server acknowledges your message\n".encode())
-          
-=======
->>>>>>> main
 
             # receive a ping
             if message == "ping":
@@ -66,22 +56,12 @@ class Recieve_Connection_Thread(threading.Thread):
             thread.start()
             connections += 1
             playerNumber[addr] = connections, client_socket
-<<<<<<< HEAD
-            client_socket.send(f"Connection to server established. You're Player #{connections}\n".encode("utf8"))
-
-           
-            for client_socket in client_sockets:
-               
-                client_socket.send(str(f"Players: {client_addrs} are in the lobby!\n").encode("utf8"))
-=======
 
             # client_socket.send(f"Connection to server established. You're Player #{connections}\n".encode("utf8"))
 
             # for client_socket in client_sockets:
                
             #     client_socket.send(str(f"Players: {client_addrs} are in the lobby!\n").encode("utf8"))
-
->>>>>>> main
 
         print(f"Done with connections ({connections}/{MAX_CONNECTIONS})")
 
@@ -208,10 +188,7 @@ if __name__ == "__main__":
     # with listening threads and vice versa
     client_sockets = []
     client_addrs = []
-<<<<<<< HEAD
 
-=======
->>>>>>> main
     playerNumber = {}
 
     ready_clients = [False, False, False, False, False]
@@ -227,37 +204,16 @@ if __name__ == "__main__":
     player_voted = [False] * NUM_PLAYERS
     while not (all_ready and host_voted):
 
-<<<<<<< HEAD
-        #gets the message and its coresponding sender adderess 
-=======
+
 
         #gets the message and its coresponding sender adderess
->>>>>>> main
+
         message, addr = message_queue.get()    
         print(message)
 
 
         # application layer protocol for lobby (parse tokens)
-<<<<<<< HEAD
-    
-    #Token Parse------------------------------------------------------------------
-    #splitMessage[1] should be the data 
-        tokens = message.split('-')
 
-        if (tokens[0] == "Vote_Host"):
-            P_ID = tokens[1]
-            vote_ID = tokens[2]
-
-            ## TODO: check if P_ID is valid (player exists)
-            player_voted[P_ID] = True
-            host_votes[vote_ID] += 1
-
-        # TODO: when all players have finished voting, calculate final Host_choice and send to client
-        # then set Player(Host_Choice).isHost = True  
-
-        elif (tokens[0] == "Host_Choice"):
-            pass
-=======
    
         #Token Parse------------------------------------------------------------------
         #splitMessage[1] should be the data
@@ -291,7 +247,7 @@ if __name__ == "__main__":
         if all_ready == True:
  
             break
->>>>>>> main
+
 
         elif (tokens[0] == "Ready_Up"):
 
@@ -325,30 +281,13 @@ if __name__ == "__main__":
     while game_loop:
         message, addr = message_queue.get()
         print(message)
-<<<<<<< HEAD
-=======
 
->>>>>>> main
+
 
          # application layer protocol for game loop (parse tokens)
          # ...
 
-<<<<<<< HEAD
-        tokens = message.split('-')
 
-       #Token Parse------------------------------------------------------------------
-
-        if (tokens[0] == "Buzzing"):
-               pass
-
-        elif (tokens[0] == "Host_Choice"):
-            pass
-
-        #Token Parse------------------------------------------------------------------
-         
-
-
-=======
 
         tokens = message.split('-')
 
@@ -367,4 +306,4 @@ if __name__ == "__main__":
 
 
         #Token Parse------------------------------------------------------------------
->>>>>>> main
+
