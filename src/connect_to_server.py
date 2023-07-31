@@ -33,7 +33,6 @@ def listening_thread(sock, addr, message_queue):
             else:
                 print(f"Recieved message from {addr}")
                 message_queue.put((message, addr))
-                sock.send("Client acknowledges your message\n".encode())
     
 #### Connect to server from Streamlit
 def main():
