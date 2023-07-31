@@ -24,15 +24,7 @@ def listening_thread(sock, addr, message_queue):
     with sock:
         while True:
             message = sock.recv(BUFFER_SIZE).decode("utf8")
-
-            # receive a ping
-            if message == "ping":
-                    sock.send("pong".encode('utf-8'))
-                    # client_socket.close()
-                    # break
-            else:
-                print(f"Recieved message from {addr}")
-                message_queue.put((message, addr))
+            message_queue.put((message, addr))
     
 #### Connect to server from Streamlit
 def main():
