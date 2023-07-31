@@ -25,20 +25,8 @@ def ready_up_test():
                 userTestInput = input("would you like to ready up? ('y' or 'n'): ")
 
 
-<<<<<<< HEAD
-        BUFFER_SIZE = 1024
-   
-        data = my_socket.recv(BUFFER_SIZE).decode("utf8")
-        print(f"Recived: {data}")
-     
-
-        #on 5th loop client can choose to ready up (only here for testing change as needed)
-        if(index == 5):
-            userTestInput = input("would you like to ready up? ('y' or 'n'): ")
-=======
                 if(userTestInput == "y"):
                     my_socket.send("Ready_Up-3-some type of data".encode("utf8"))
->>>>>>> origin
 
 
             index += 1

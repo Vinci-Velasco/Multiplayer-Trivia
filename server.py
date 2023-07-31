@@ -7,20 +7,12 @@ HOST = "127.0.0.1"
 PORT = 7070
 NUM_PLAYERS = 5
 
-
 # Thread that deals with listening to clients
 def listening_thread(client_socket, addr, message_queue):
     BUFFER_SIZE = 1024 # change size when needed
     with client_socket:
         while True:
             message = client_socket.recv(BUFFER_SIZE).decode("utf8")
-<<<<<<< HEAD
-            print(f"Recieved message from {addr}")
-            message_queue.put((message, addr))
-            client_socket.send("Server acknowledges your message\n".encode())
-
-
-=======
 
             # receive a ping
             if message == "ping":
@@ -32,7 +24,6 @@ def listening_thread(client_socket, addr, message_queue):
                 message_queue.put((message, addr))
                 client_socket.send("Server acknowledges your message\n".encode())
          
->>>>>>> origin
 # Custom thread class that creates new threads once connections come in
 class Recieve_Connection_Thread(threading.Thread):
     def __init__(self, server, message_queue):
@@ -80,56 +71,6 @@ class Recieve_Connection_Thread(threading.Thread):
     def stop(self):
         self.stop_connections = True
         socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((HOST, PORT))
-
-def allPlayersReady(ready_clients):
-    index = 0
-    proceedOrNot = True
-
-
-    for allClients in client_sockets:
-            
-        if(ready_clients[index] == False):
-
-            for client in client_sockets:
-                # send data to all clients
-               
-                #commented out until a solution for slowing down the rate of sending is found
-                #client.send(str(f"Waiting on Player {index + 1} to ready up!\n").encode("utf8"))
-                proceedOrNot = False
-                
-        index += 1
-    return proceedOrNot
-
-
-#Token functions------USE if needed-------------------------------------------------------------------------------
-
-def readyUp(ready_clients, playerNumber, client_sockets):
-
-    ready_clients[playerNumber-1] = True
-    client_sockets[playerNumber-1].send("Server Acknowlegdes Ready Up\n".encode("utf8"))
-
-    return ready_clients
-
-def hostChoice():
-    pass
-
-def voteHost():
-    pass
-
-def answer():
-    pass
-
-def buzzing():
-    pass
-
-#Token functions-------------------------------------------------------------------------------------
-
-
-class Player:
-    def __init__(self, id, score):
-        self.id = id
-        self.score = score
-        self.isHost = False
 
 
 def allPlayersReady(ready_clients):
@@ -197,7 +138,6 @@ if __name__ == "__main__":
     # with listening threads and vice versa
     client_sockets = []
     client_addrs = []
-
     playerNumber = {}
 
     ready_clients = [False, False, False, False, False]
@@ -213,6 +153,7 @@ if __name__ == "__main__":
     player_voted = [False] * NUM_PLAYERS
     while not (all_ready and host_voted):
 
+
         #gets the message and its coresponding sender adderess
         message, addr = message_queue.get()    
         print(message)
@@ -220,9 +161,10 @@ if __name__ == "__main__":
 
         # application layer protocol for lobby (parse tokens)
    
-    #Token Parse------------------------------------------------------------------
+        #Token Parse------------------------------------------------------------------
         #splitMessage[1] should be the data
         tokens = message.split('-')
+
 
         if (tokens[0] == "Vote_Host"):
             P_ID = tokens[1]
@@ -289,4 +231,3 @@ if __name__ == "__main__":
 
 
         #Token Parse------------------------------------------------------------------
-
