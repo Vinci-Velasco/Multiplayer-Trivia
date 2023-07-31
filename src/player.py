@@ -8,3 +8,10 @@ class Player:
         self.score = 0
         self.is_host = False
         self.voted = False
+
+    def increaseScore(self):
+        self.score += 1
+    
+    def getScore(self):
+        return self.score
+    
