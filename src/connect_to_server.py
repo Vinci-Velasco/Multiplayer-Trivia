@@ -1,37 +1,42 @@
 import streamlit as st
 import time
+import socket
+from src.player import Player
 
-def init():
-    # TODO: get this info from the server. for now just hardcode as Player 1
-    my_id = 0
-    num_players = 5
+#### Test connection by pinging the server
+def test_connect(host, port):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.connect((host, port))
+        s.send("ping".encode('utf-8'))
+        return s.recv(1024).decode('utf-8'), s
+    except ConnectionRefusedError as e:
+        return e
 
-    st.session_state['my_id'] = my_id
-    st.session_state['num_players'] = num_players
-    st.session_state['online_players'] = num_players * [False]
-
-    st.session_state.online_players[my_id] = True
-
-def connect(address):
-    # TODO make this connect to server.py, check if valid connection
-    if address=="valid":
-        return True
-    else:
-        return False
-
+def exit():
+    time.sleep(1)
+    st.experimental_rerun()
+    
+#### Connect to server from Streamlit
 def main():
     st.title('CMPT371 Project: Multiplayer Trivia Game')
-    input = st.text_input("Enter Server IP")
+    server = st.text_input("Enter Server IP")
+    port = st.text_input("Enter Port")
 
-    if input:
-        with st.spinner(text=f"Now connecting to {input}"):
+    if server and port: # check user input
+        port_num = int(port)
+        with st.spinner(text=f"Now connecting to {server}"):
+            connection = test_connect(server, port_num)
             time.sleep(1)
-            
-        st.success('Connection OK')
-        init()
-        time.sleep(1)
-        st.session_state.server = input
-        st.experimental_rerun()
 
+        if not connection[0] == "pong":
+            st.exception(connection[0])
+        else:
+            st.success('Connection OK')
+            st.session_state.port = port_num
+            st.session_state.server = server
+            st.session_state.my_socket = connection[1]
+            exit()
+        
 if __name__ == '__main__':
     main()

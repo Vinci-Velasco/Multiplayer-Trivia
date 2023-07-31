@@ -1,0 +1,19 @@
+{
+    "questions": [
+        {
+            "id": 1,
+            "question": "what flavor is strawberry shortcake?",
+            "answer": "sweet"
+        },
+        {
+            "id": 2,
+            "question": "what rhymes with orange?",
+            "answer": "door hinge"
+        },
+        {
+            "id": 3,
+            "question": "whats the difference between a fish and a piano?",
+            "answer": "tuna fish"
+        }
+    ]
+}

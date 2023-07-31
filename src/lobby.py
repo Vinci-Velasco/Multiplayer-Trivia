@@ -1,105 +1,105 @@
 import streamlit as st
+from src.player import Player
 
+players = {}
+cols = {}
 
-
-def init():
-    nplayers = st.session_state.num_players
-
-    if 'i_voted' not in st.session_state:
+def init(post_init=False):
+    if not post_init: # TODO: receive from server
         st.session_state.i_voted = False
-    if 'host_votes' not in st.session_state:
-        # TODO: get this from the server instead
-        st.session_state.host_votes = nplayers * [0]
-        st.session_state.all_votes = nplayers * [False]
+        st.session_state.im_ready = False
+        st.session_state.total_votes = 0
+        st.session_state.total_ready = 0
+        st.session_state.host_id = None
 
-    st.session_state['game_start'] = False
-    st.session_state['host_id'] = None
+#### Draw UI components
+# Called on each page update
+def init_cols():
+    global cols
+    c1, c2, c3, c4 = st.columns(4, gap="large")        
+    cols = { 1: c1, 2: c2, 3: c3, 4: c4 }
+    # cols[1].write("**Players**")
+    # cols[2].write("**Status**")
+    cols[1].subheader('Players')
+    cols[2].subheader('Status')
 
-def update():
-    # TODO: add code to refresh lobby
-
-    # refresh player online status
-    # refresh number of votes
-    # refresh when host is chosen
-
-
-    st.write('aaaa')
-
-
-# def voting_progress():
-#     nplayers = st.session_state.num_players
-
-#     nvotes = st.session_state.all_votes.count(True)
-#     while st.session_state.host_id == None:
-#         vote.write (f"Votes: {nvotes}/{nplayers}")
-
-# def send_vote():
-#     if st.session_state.i_voted == False:
-#         st.session_state.i_voted = True
-
-#     # TODO: send Vote_Host tokens to server
-
-
-def list_players():
-    player, player_status, vote = st.columns([0.5, 0.6, 1])
-
-    player.write("**Players**")
-    player_status.write("**Status**")
-    vote.write("**Vote Host**")
-
-    nplayers = st.session_state.num_players
-
-    # initialize online players dictionary. e.g. online['p1'] = True
-    # online = {}
-    online = dict.fromkeys(range(1, nplayers))
-
-    for p in range(1, nplayers+1):
-        online[p] = st.session_state.online_players[p-1]
-
-        if p-1 == st.session_state.my_id:
-            player.write(f"Player {p} (You)")
-        else:
-            player.write(f"Player {p}")
-
-        if online[p]:
-            player_status.write("Ready!")
-        else:
-            player_status.write("Waiting for connection...")
-
-        vote.button('Vote',  disabled=(not online[p]), key=f"vote{p}")
-
-    # for p in range(0, nplayers):
-    #     online["p{0}".format(p+1)] = st.session_state.online_players[p]
-    #     player, status, vote  = st.columns([0.5,0.6,1,1])
-
-    #     if online[f'{p}']
-
-    #     player.write(f"Player {p+1}")
-    #     status.write(f"{status}")
-
-    # cols = st.columns(nplayers)
-    # for i, x in enumerate(cols):
-    #     x.selectbox(f"Input # {i}", [nplayers], key=i)
-    
-
-def test():
-    st.write(st.session_state)
-
-    if st.button('Say hello'):
-        st.session_state.key = 'bug'
-        st.write(st.session_state.key)
-        st.experimental_rerun()
+    if 'ready_up' not in st.session_state:
+        # cols[3].write("**Vote Host**")
+        cols[3].subheader('Vote Host')
     else:
-        st.write('Goodbye')
+        cols[3].subheader("Ready Up")
+
+    # List each connected
+    for p in players:
+        if p.is_me:
+            cols[1].write(f"Player {p.id} (You)")
+        else:
+            cols[1].write(f"Player {p.id}")
+
+        if p.voted == False:
+            cols[2].write("Voting...")
+        else:
+            cols[2].write('Waiting...')
+
+        if 'ready_up' not in st.session_state:
+            cols[3].button('Vote',  disabled=(st.session_state.i_voted), on_click=vote_callback, key=f"vote_btn{p.id}")
+        elif p.is_me:
+            cols[3].button('Ready', on_click=ready_callback)
+
+def vote_counter():
+    nplayers = len(players)
+    total_votes = st.session_state.total_votes
+
+    if (total_votes <= nplayers):
+        cols[4].write(f"Votes: {total_votes}/{nplayers}")
+    else:
+        find_host()
+
+def vote_callback():
+    # testing
+    st.session_state.total_votes += 1
+
+def ready_callback():
+    st.session_state.total_ready += 1
+
+def ready_up():
+    nplayers = len(players)
+    total_ready = st.session_state.total_ready
+    if (total_ready <= nplayers):
+        cols[4].write(f"Ready: {total_ready}/{nplayers}")
+    else:
+        # Start game
+        st.session_state.game_start = True
+        st.experimental_rerun()
+
+#### Call server to update internal states
+
+def update_players():
+    global players
+    player_list = st.session_state.player_list
+    players = player_list      
+
+def find_host():
+    # TODO: get host from server
+    test_host = 1
+    st.session_state.host_id = 1
+    if 'ready_up' not in st.session_state:
+        st.session_state.ready_up = False
+        st.experimental_rerun()
+    ready_up()
 
 def main():
     st.title('Lobby')
-    
-    init()
+    if 'total_votes' not in st.session_state:
+        init()
 
+    update_players()
+    init_cols()
 
-    list_players()
-
+    if 'ready_up' not in st.session_state:
+        vote_counter()
+    else:
+        ready_up()
 
 if __name__ == '__main__':
     main()

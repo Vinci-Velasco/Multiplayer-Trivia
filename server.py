@@ -14,11 +14,25 @@ def listening_thread(client_socket, addr, message_queue):
     with client_socket:
         while True:
             message = client_socket.recv(BUFFER_SIZE).decode("utf8")
+<<<<<<< HEAD
             print(f"Recieved message from {addr}")
             message_queue.put((message, addr))
             client_socket.send("Server acknowledges your message\n".encode())
 
 
+=======
+
+            # receive a ping
+            if message == "ping":
+                    client_socket.send("pong".encode('utf-8'))
+                    # client_socket.close()
+                    # break
+            else:
+                print(f"Recieved message from {addr}")
+                message_queue.put((message, addr))
+                client_socket.send("Server acknowledges your message\n".encode())
+         
+>>>>>>> origin
 # Custom thread class that creates new threads once connections come in
 class Recieve_Connection_Thread(threading.Thread):
     def __init__(self, server, message_queue):
@@ -34,16 +48,13 @@ class Recieve_Connection_Thread(threading.Thread):
         connections = 0
         MAX_CONNECTIONS = 5
 
-
         while connections < MAX_CONNECTIONS:
             print(f"Listening for connections ({connections}/{MAX_CONNECTIONS})...")
             client_socket, addr = self.server.accept()
 
-
             # terminate thread if stop_connections set to True
             if self.stop_connections:
                 break
-
 
             # otherwise create new thread for connection
             client_sockets.append(client_socket)
@@ -53,13 +64,12 @@ class Recieve_Connection_Thread(threading.Thread):
             thread.start()
             connections += 1
             playerNumber[addr] = connections, client_socket
-            client_socket.send(f"Connection to server established. You're Player #{connections}\n".encode("utf8"))
 
+            # client_socket.send(f"Connection to server established. You're Player #{connections}\n".encode("utf8"))
 
-           
-            for client_socket in client_sockets:
+            # for client_socket in client_sockets:
                
-                client_socket.send(str(f"Players: {client_addrs} are in the lobby!\n").encode("utf8"))
+            #     client_socket.send(str(f"Players: {client_addrs} are in the lobby!\n").encode("utf8"))
 
 
         print(f"Done with connections ({connections}/{MAX_CONNECTIONS})")
