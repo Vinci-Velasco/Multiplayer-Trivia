@@ -29,7 +29,7 @@ def listening_thread(client_socket, addr, message_queue):
                     client_socket.send("pong".encode('utf-8'))
             else:
                 message_queue.put((message, addr))
-            # client_socket.send("Server acknowledges your message\n".encode())
+                client_socket.send("Server acknowledges your message\n".encode())
          
 # Custom thread class that creates new threads once connections come in
 class Recieve_Connection_Thread(threading.Thread):
@@ -99,6 +99,19 @@ def get_all_players():
         all_players.append(c.player_data)
         
     return all_players
+
+def givePoint(client_id):
+    client = clients[client_id]
+    players_data = client.player_data
+    players_data.increaseScore()
+
+def viewPlayerScore(client_id):
+    client = clients[client_id]
+
+    players_data = client.player_data
+    print(players_data.getScore())
+
+    
 
 def allPlayersReady(ready_clients):
     index = 0
@@ -269,6 +282,15 @@ if __name__ == "__main__":
         all_ready = allPlayersReady(ready_clients)
         # If all players are ready move on to the main game loop
         if all_ready == True:
+            print("------------------------------------------\n")
+            viewPlayerScore(1)
+            viewPlayerScore(2)
+            givePoint(1)
+            viewPlayerScore(1)
+            viewPlayerScore(2)
+            givePoint(2)
+            viewPlayerScore(1)
+            viewPlayerScore(2)
  
             break
 
