@@ -13,7 +13,7 @@ def test_connect(host, port):
         s.send("ping".encode('utf-8'))
         return s.recv(1024).decode('utf-8'), s
     except ConnectionRefusedError as e:
-        return e
+        return e, e.filename
 
 def exit():
     time.sleep(1)
@@ -26,7 +26,7 @@ def listening_thread(sock, addr, message_queue):
             message = sock.recv(BUFFER_SIZE).decode("utf8")
             message_queue.put((message, addr))
     
-#### Connect to server from Streamlit
+#### Connect to server from Streamlit GUI
 def main():
     st.title('CMPT371 Project: Multiplayer Trivia Game')
     server = st.text_input("Enter Server IP")
