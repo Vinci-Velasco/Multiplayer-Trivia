@@ -13,7 +13,7 @@ def test_connect(host, port):
         s.send("ping".encode('utf-8'))
         return s.recv(1024).decode('utf-8'), s
     except ConnectionRefusedError as e:
-        return e, e.filename
+        return e, "Could not connect to server. Check inputs and make sure server.py is running."
 
 def exit():
     time.sleep(1)

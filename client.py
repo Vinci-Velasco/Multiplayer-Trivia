@@ -1,3 +1,5 @@
+#### use client.py to communicate directly with the server via passed-in sockets
+
 import socket
 import time
 import pickle

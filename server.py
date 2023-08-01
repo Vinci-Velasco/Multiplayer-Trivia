@@ -7,7 +7,7 @@ from src import player
 from game import lobby_state
 
 HOST = "127.0.0.1"
-PORT = 7070
+PORT = 7074
 
 NUM_PLAYERS = 5
 
@@ -15,6 +15,7 @@ min_players = 3
 max_players = 5
 
 clients = {}
+current_state = "WAIT"
 
 # Thread that deals with listening to clients
 def listening_thread(client_socket, addr, message_queue):
@@ -121,20 +122,51 @@ def allPlayersReady(ready_clients):
 
 
 #Token functions------USE if needed-------------------------------------------------------------------------------
+
+#### Req_Data: Handle client's requests for server data
+def parse_data_req(client, data_type, request):
+            # Send client's own Player ID
+            if request == "my_id":
+                send_data_to_client(client, data_type, client.id)
+
+            elif request == "all_players_list":
+                all_players = get_all_players()
+                send_data_to_client(client, data_type, all_players)
+
+            # Send client's own Player as an object
+            elif request == "my_player":
+                p_object = client.player_data
+                send_data_to_client(client, data_type, p_object)
+
+            if request == "lobby_state":
+                all_players = get_all_players()
+                global current_state
+                last_state = current_state
+                current_state = lobby_state.get_state(all_players, last_state)
+                
+                if current_state == "FIND_HOST":
+                    host = lobby_state.calculate_host(all_players)
+                    # TODO: send host to all clients, wait for ACK from all clients
+                    current_state = "HOST_FOUND"
+                elif current_state == "START_GAME":
+                    # TODO: break out of lobby loop and start game
+                    # Tell all clients that they can start the game
+                    pass
+
+                send_data_to_client(client, data_type, current_state)
+
+#### Automatically format data before sending based on data_type
 def send_data_to_client(client, data_type, data):
     # Encode String before sending
     if data_type == "String":
-        print(f"SEND {data} string to Client {client.id}: {data}")
+        print(f"....sending string to Client {client.id}: {data}")
         client.socket.send(str(data).encode('utf8'))
 
     # Serialize Object before sending            
     elif data_type == "Object":
-        print(f"SEND {data} object to Client {client.id}: {data}")
+        print(f"....sending object to Client {client.id}: {data}")
         data_object = pickle.dumps(data)
         client.socket.send(data_object)
-
-def print_ACK(player, ACK):
-    print(f"Received ACK from Player {player.id}: {ACK}")
 
 def readyUp(ready_clients, PlayerNumber, client_sockets):
     ready_clients[PlayerNumber-1] = True
@@ -173,7 +205,6 @@ if __name__ == "__main__":
     client_addrs = []
     PlayerNumber = {}
 
-
     ready_clients = [False, False, False, False, False]
     message_queue = Queue() # locks are already built in to Queue class
     recieve_connections_thread = Recieve_Connection_Thread(server, message_queue)
@@ -192,77 +223,28 @@ if __name__ == "__main__":
         client = clients[sender_id]
 
         #### Internal Lobby states and values
-        current_state = "WAIT"
         host = None
         total_votes = 0
 
         #### application layer protocol for lobby (Parse Tokens)
         tokens = message.split('-')
 
-        #### Handle Requests for Data from Sender
         if (tokens[0] == "Req_Data"):
             data_type = tokens[1]
             request = tokens[2]
-
-            # Send client's own Player ID
-            if request == "my_id":
-                send_data_to_client(client, data_type, sender_id)
-
-            # Send List of online Player IDs
-            elif request == "player_id_list":
-                player_id_list = []
-                for c in clients.values():
-                    player_id_list.append(c.id)
-                send_data_to_client(client, data_type, player_id_list)
-
-            elif request == "all_players_list":
-                all_players = get_all_players()
-                send_data_to_client(client, data_type, all_players)
-
-            # Send client's own Player object
-            elif request == "my_player":
-                p_object = client.player_data
-                send_data_to_client(client, data_type, p_object)
-
-            # elif request == "total_votes":
-            #     all_players = get_all_players()
-            #     total_votes = lobby_state.get_total_votes(all_players)
-            #     send_data_to_client(client, data_type, total_votes)
-
-            if request == "lobby_state":
-                all_players = get_all_players()
-                last_state = current_state
-                current_state = lobby_state.get_state(all_players, last_state)
-                
-                if current_state == "FIND_HOST":
-                    host = lobby_state.calculate_host(all_players)
-                    # TODO: send host to all clients, wait for ACK from all clients
-                    current_state = "HOST_FOUND"
-                elif current_state == "START_GAME":
-                    # TODO: break out of lobby loop and start game
-                    # Tell all clients that they can start the game
-                    pass
-
-                send_data_to_client(client, data_type, current_state)
+            parse_data_req(client, data_type, request)
                     
-
         elif (tokens[0] == "Vote_Host"):
             vote_id = int(tokens[1])
             clients[vote_id].player_data.votes += 1
             clients[sender_id].player_data.already_voted = True
 
-
         # TODO: when all players have finished voting, calculate final Host_choice and send to client
         # then set Player(Host_Choice).isHost = True  
-
 
         elif (tokens[0] == "Ready_Up"):
             ready_Clients = readyUp(ready_clients, PlayerNumber[addr][0], client_sockets)
 
-        elif (tokens[0] == "ACK"):
-            data = tokens[1]
-            print_ACK(client, data)
-           
     #Token Parse------------------------------------------------------------------
 
 
