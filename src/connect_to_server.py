@@ -45,11 +45,13 @@ def main():
             st.session_state.port = port_num
             st.session_state.server = server
             st.session_state.my_socket = connection[1]
-            print(st.session_state)
+            # Initialize message queue and start listening thread
             st.session_state.message_queue = Queue()
             thread = threading.Thread(
                 target=listening_thread, args=(st.session_state.my_socket, (st.session_state.server, st.session_state.port), st.session_state.message_queue))
             thread.start()
+            
+            print(st.session_state)
             exit()
         
 if __name__ == '__main__':
