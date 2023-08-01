@@ -7,7 +7,7 @@ from src import player
 from game import lobby_state
 
 HOST = "127.0.0.1"
-PORT = 7074
+PORT = 7070
 
 NUM_PLAYERS = 5
 
@@ -27,7 +27,8 @@ def listening_thread(client_socket, addr, message_queue):
             print(f"Recieved message from {addr}")
             # receive a ping
             if message == "ping":
-                    client_socket.send("pong".encode('utf-8'))
+                print("....got ping, sent pong")
+                client_socket.send("pong".encode('utf-8'))
             else:
                 message_queue.put((message, addr))
             # client_socket.send("Server acknowledges your message\n".encode())
@@ -123,37 +124,39 @@ def allPlayersReady(ready_clients):
 
 #Token functions------USE if needed-------------------------------------------------------------------------------
 
-#### Req_Data: Handle client's requests for server data
+#### Req_Data: Handle client's requests for server data, send back a response containing the requested data
 def parse_data_req(client, data_type, request):
-            # Send client's own Player ID
-            if request == "my_id":
-                send_data_to_client(client, data_type, client.id)
+    data = ""
 
-            elif request == "all_players_list":
-                all_players = get_all_players()
-                send_data_to_client(client, data_type, all_players)
+    if request == "my_id":
+        data = client.id
 
-            # Send client's own Player as an object
-            elif request == "my_player":
-                p_object = client.player_data
-                send_data_to_client(client, data_type, p_object)
+    elif request == "all_players_list":
+        data = get_all_players()
 
-            if request == "lobby_state":
-                all_players = get_all_players()
-                global current_state
-                last_state = current_state
-                current_state = lobby_state.get_state(all_players, last_state)
-                
-                if current_state == "FIND_HOST":
-                    host = lobby_state.calculate_host(all_players)
-                    # TODO: send host to all clients, wait for ACK from all clients
-                    current_state = "HOST_FOUND"
-                elif current_state == "START_GAME":
-                    # TODO: break out of lobby loop and start game
-                    # Tell all clients that they can start the game
-                    pass
+    elif request == "my_player":
+        data = client.player_data
 
-                send_data_to_client(client, data_type, current_state)
+    if request == "lobby_state":
+        all_players = get_all_players()
+        global current_state
+        last_state = current_state
+        current_state = lobby_state.get_state(all_players, last_state)
+        
+        if current_state == "FIND_HOST":
+            host = lobby_state.calculate_host(all_players)
+            # TODO: send host to all clients, wait for ACK from all clients
+            current_state = "HOST_FOUND"
+        elif current_state == "START_GAME":
+            # TODO: break out of lobby loop and start game
+            # Tell all clients that they can start the game
+            pass
+        
+        data = current_state
+    
+    # Send the requested data back to the client
+    response = f"Send_Req-{data_type}-{request}-{data}"
+    send_data_to_client(client, data_type, response)
 
 #### Automatically format data before sending based on data_type
 def send_data_to_client(client, data_type, data):
