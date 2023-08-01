@@ -9,6 +9,8 @@ class Player():
         self.is_me = is_me
         self.already_voted = False
         self.readied_up = False
+        self.received_question = False
+        self.has_lock = False
 
     def increaseScore(self):
         self.score += 1
