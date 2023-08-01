@@ -50,7 +50,7 @@ def main():
     #### connect to server
     if 'server' not in st.session_state:
         connect_to_server.main()
-        else:
+    else:
         # init_data(st.session_state.my_socket)
         s = st.session_state.my_socket
         if 'game_start' not in st.session_state:
