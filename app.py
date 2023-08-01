@@ -7,6 +7,7 @@ from src import player
 import threading
 from queue import Queue
 from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
+import time
 
 HOST = "127.0.0.1"
 PORT = 7070
@@ -53,34 +54,28 @@ def gui_demo():
     elif 'show_scoreboard' not in st.session_state:
         scoreboard.main()
 
-def queue_callback():
-    message_queue = st.session_state.message_queue
-    message = message_queue.get()    
-    print(f"received message in queue: {message}")
-    st.write(f"received message in queue: {message}")
-
 def main():
     #### connect to server
     if 'server' not in st.session_state:
         connect_to_server.main()
+    elif 'message_queue' not in st.session_state:
+        connect_to_server.init_message_queue()
     else:
-        s = st.session_state.my_socket
-
-        if 'message_queue' not in st.session_state:
-            queue = Queue()
-            t = threading.Thread(
-            target=client.listening_thread, args=(s, queue, queue_callback))
-            ctx = get_script_run_ctx()
-            add_script_run_ctx(thread=t, ctx=ctx)
-            t.start()
-            print("i started the thread pls respond")
-            st.session_state.message_queue = queue
-            st.experimental_rerun()
-            # t = client.init_thread(s, st.session_state.message_queue, queue_callback)
-        else:
-            client.req_data_string(s, "my_id")
-
-
+        # if 'update' not in st.session_state:
+        #     client.req_data_string(s, "my_id")
+        # else:
+        #     del st.session_state.update
+        #     st.experimental_rerun()
+        while True:
+            queue = st.session_state.message_queue
+            try:
+                s = st.session_state.my_socket
+                client.req_data_string(s, "my_id")
+            except queue.Empty:
+                st.experimental_rerun()
+                time.sleep(5)
+            else:
+                st.write("halp")
 
         # if 'game_start' not in st.session_state:
         #     if 'my_id' not in st.session_state:

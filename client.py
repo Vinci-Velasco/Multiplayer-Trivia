@@ -4,17 +4,28 @@ import socket
 import time
 import pickle
 import traceback
+import threading
+from queue import Queue
+from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
 
 HOST = "127.0.0.1"
 PORT = 7070
+
+# # Initialize message queue and start listening thread
+# def init_thread(s, queue, callback):
+#     queue = Queue()
+#     thread = threading.Thread(
+#         target=listening_thread, args=(s, queue, callback))
+#     # thread.start()
+#     return thread
 
 #### Data Strings need to be decoded with utf8
 def req_data_string(s, string):
     BUFFER_SIZE = 1024
     s.send(f"Req_Data-String-{string}".encode('utf8'))
     
-    string = s.recv(BUFFER_SIZE).decode('utf8')
-    return string
+    # string = s.recv(BUFFER_SIZE).decode('utf8')
+    # return string
 
 #### Data Objects need to be serialized/deserialized with pickle
 def req_data_object(s, object):
