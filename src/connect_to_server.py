@@ -1,6 +1,9 @@
 import streamlit as st
 import time
 import socket
+from src.player import Player
+import threading
+from queue import Queue
 
 #### Test connection by pinging the server
 def test_connect(host, port):
@@ -15,6 +18,13 @@ def test_connect(host, port):
 def exit():
     time.sleep(1)
     st.experimental_rerun()
+
+def listening_thread(sock, addr, message_queue):
+    BUFFER_SIZE = 1024 # change size when needed
+    with sock:
+        while True:
+            message = sock.recv(BUFFER_SIZE).decode("utf8")
+            message_queue.put((message, addr))
     
 #### Connect to server from Streamlit GUI
 def main():
@@ -35,6 +45,13 @@ def main():
             st.session_state.port = port_num
             st.session_state.server = server
             st.session_state.my_socket = connection[1]
+            # Initialize message queue and start listening thread
+            st.session_state.message_queue = Queue()
+            thread = threading.Thread(
+                target=listening_thread, args=(st.session_state.my_socket, (st.session_state.server, st.session_state.port), st.session_state.message_queue))
+            thread.start()
+            
+            print(st.session_state)
             exit()
         
 if __name__ == '__main__':
