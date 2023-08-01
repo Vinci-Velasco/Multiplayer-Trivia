@@ -4,9 +4,9 @@
 import streamlit as st
 import time
 import socket
-from src.player import Player
 import threading
 from queue import Queue
+from src.st_notifier import notify, streamlit_loop 
 from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
 
 #### Test connection by pinging the server
@@ -35,13 +35,13 @@ def listening_thread(sock, message_queue, message_callback):
 
 #### Runs each time a new message arrives from the server
 def message_callback():
+
     message_queue = st.session_state.message_queue
     message = message_queue.get()    
-    print(f"received message in queue: {message}")
-    st.write(f"received message in queue: {message}")
-    st.balloons()
-    print("i even wrote it")
-    st.session_state.update = True 
+
+    time.sleep(5)
+
+    streamlit_loop.call_soon_threadsafe(notify)
 
 def init_message_queue():
     queue = Queue()

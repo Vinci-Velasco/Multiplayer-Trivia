@@ -58,24 +58,14 @@ def main():
     #### connect to server
     if 'server' not in st.session_state:
         connect_to_server.main()
+    #### initialize message queue thread
     elif 'message_queue' not in st.session_state:
         connect_to_server.init_message_queue()
     else:
-        # if 'update' not in st.session_state:
-        #     client.req_data_string(s, "my_id")
-        # else:
-        #     del st.session_state.update
-        #     st.experimental_rerun()
-        while True:
-            queue = st.session_state.message_queue
-            try:
-                s = st.session_state.my_socket
-                client.req_data_string(s, "my_id")
-            except queue.Empty:
-                st.experimental_rerun()
-                time.sleep(5)
-            else:
-                st.write("halp")
+        queue = st.session_state.message_queue
+        s = st.session_state.my_socket
+        client.req_data_string(s, "my_id")
+        st.balloons()
 
         # if 'game_start' not in st.session_state:
         #     if 'my_id' not in st.session_state:
