@@ -27,20 +27,34 @@ def listening_thread(sock, message_queue, message_callback):
                 message = sock.recv(BUFFER_SIZE).decode("utf8")
                 message_queue.put((message))
                 # Run message_callback() to update frontend when a new message arrives
-                print("im running the callback please response")
                 message_callback()
             except ConnectionResetError as e:
                 # connection to server was interrupted
                 break
 
+
 #### Runs each time a new message arrives from the server
 def message_callback():
-
     message_queue = st.session_state.message_queue
-    message = message_queue.get()    
+    num_messages = st.session_state.num_messages
 
+    if message_queue.empty():
+        st.session_state.message_in_queue = False
+    else:
+        st.session_state.message_in_queue = True
+    # Update session state if there are new messages in Queue
+    # if message_queue.qsize() <= num_messages:
+    #     print(message_queue.qsize())
+    #     st.session_state.message_in_queue = False
+    # else:
+    #     message = message_queue.get()
+    #     print(f"received messsage: {message}")
+
+    #     st.session_state.num_messages += 1
+    #     st.session_state.message_in_queue = True
+
+    # Refresh app + message queue every 5 seconds
     time.sleep(5)
-
     streamlit_loop.call_soon_threadsafe(notify)
 
 def init_message_queue():
@@ -48,14 +62,20 @@ def init_message_queue():
     s = st.session_state.my_socket
     t = threading.Thread(
     target=listening_thread, args=(s, queue, message_callback))
+
     # Add thread to Streamlit's application context
     ctx = get_script_run_ctx()
     add_script_run_ctx(thread=t, ctx=ctx)
+
     # Make thread daemonic to exit on ctrl+c
     t.daemon = True
     t.start()
-    # Add queue to Streamlit's session state, so it can be accessed throughout the session instance
+
+    # Add queue to Streamlit's session state, so it can be accessed throughout the application instance
+    st.session_state.message_in_queue = False
+    st.session_state.num_messages = 0
     st.session_state.message_queue = queue
+
     st.experimental_rerun()
 
 def exit():

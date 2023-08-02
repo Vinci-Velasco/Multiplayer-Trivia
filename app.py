@@ -61,11 +61,17 @@ def main():
     #### initialize message queue thread
     elif 'message_queue' not in st.session_state:
         connect_to_server.init_message_queue()
+
     else:
-        queue = st.session_state.message_queue
         s = st.session_state.my_socket
-        client.req_data_string(s, "my_id")
-        st.balloons()
+
+        if st.session_state.message_in_queue == True:
+            # message_queue = st.session_state.message_queue
+            # st.write(message_queue.get())
+            st.balloons()
+        else:
+            st.write("you have no messages")
+            client.req_data_string(s, "my_id")
 
         # if 'game_start' not in st.session_state:
         #     if 'my_id' not in st.session_state:
