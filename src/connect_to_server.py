@@ -5,6 +5,7 @@ import streamlit as st
 import time
 import socket
 import threading
+import pickle
 from queue import Queue
 from src.st_notifier import notify, streamlit_loop 
 from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
@@ -52,6 +53,20 @@ def parse_message(message):
     tokens = message.split('-')
 
     if tokens[0] == "Send_Data":
+        data_type = tokens[1]
+        data = tokens[2]
+
+        if data == "my_id":
+            my_id = int(data)
+            st.session_state.my_id = my_id
+        elif data == "all_players":
+            all_players = pickle.load(data)
+            st.session_state.all_players = all_players 
+        elif data == "lobby_state":
+            # parse_lobby_state(data)
+            # meepy does this
+            pass
+            
         pass
 
     elif tokens[0] == "Lobby_State":
