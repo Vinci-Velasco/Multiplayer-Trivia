@@ -21,49 +21,45 @@ def test_connect(host, port):
         return e, "Could not connect to server. Check inputs and make sure server.py is running."
 
 def listening_thread(sock, message_queue, update_queue):
-    BUFFER_SIZE = 1024 # change size when needed
+    BUFFER_SIZE = 1024
     while True:
         try:
-            # print("trying to receive")
-            recv = sock.recv(BUFFER_SIZE)
-            # print("got to receive")
-            message = recv.decode("utf-8")
-        except ConnectionResetError as e:
-            # connection to server was interrupted
-            break
-        except UnicodeDecodeError as e:
+            recv = sock.recv(BUFFER_SIZE) # try to receive
+            message = recv.decode("utf-8") # got to receive
+        except UnicodeDecodeError: # If decoding doesn't work, message is not a string. Try deserializing with pickle
             message = pickle.loads(recv)
-            print(message)
+            print(f"Received message from server with pickle: {message}")
             message_queue.put(message)
             update_queue()
         else:
+            print(f"Received message from server: {message}")
             for m in message.split("\n"):
                 if m != "":
                     message_queue.put(m)
-            # Run update_queue() to update frontend when a new message arrives in queue
             update_queue()
 
-#### Runs each time a new message arrives from the server
+#### Runs each time a new message arrives from the server to update the front-end
 def update_queue():
     message_queue = st.session_state.message_queue
     try:
         message = message_queue.get(block=False)
         print(message)
-    except Queue.Empty:
+    except Queue.empty:
         print("error, queue is empty")
     else:
         try:
-            parse_message(message)
+            # parse message as string
+            parse_message_as_string(message)
         except AttributeError:
-            parse_message_object(message)
+            # parse message with pickle
+            parse_message(message)
 
-    # Refresh app + message queue every 5 seconds
+    # Refresh app + message queue every 0.1 seconds
     time.sleep(.1)
-    print("refresh")
+    print("(streamlit refresh)")
     streamlit_loop.call_soon_threadsafe(notify)
 
-def parse_message_object(message):
-
+def parse_message(message):
     if message["header"] == "Send_Data":
         label = message["label"]
         data = message["data"]
@@ -85,13 +81,9 @@ def parse_message_object(message):
                 players[p_id] = p
             st.session_state.players = players 
             st.session_state.total_votes = total_votes
-        elif label == "lobby_state":
-            # parse_lobby_state(data)
-            # meepy does this
-            pass
-            
 
-def parse_message(message):
+# LEGACY, all messages coming in need to be deserialized
+def parse_message_as_string(message):
     tokens = message.split('-')
 
     if tokens[0] == "Send_Data":
@@ -107,17 +99,12 @@ def parse_message(message):
             st.session_state.all_players = all_players 
             print(all_players)
         elif label == "lobby_state":
-            # parse_lobby_state(data)
-            # meepy does this
             pass
             
         pass
 
-    elif tokens[0] == "Lobby_State":
-        pass
-
 #### handle current Lobby State, e.g. if we are in Voting phase or Ready Up phase...
-def parse_lobby_state(lobby_state):
+def update_lobby_state(lobby_state):
     if lobby_state == "WAIT":
         # wait until minimum amount of players are in lobby before starting the game
         pass
@@ -138,7 +125,6 @@ def parse_lobby_state(lobby_state):
         # send ack
         pass
     
-
 def init_message_queue():
     queue = Queue()
 
@@ -155,7 +141,6 @@ def init_message_queue():
     ctx = get_script_run_ctx()
     add_script_run_ctx(thread=t, ctx=ctx)
 
-    # Make thread daemonic to exit on ctrl+c
     t.daemon = True
     t.start()
 
@@ -177,7 +162,9 @@ def main():
             connection = test_connect(server, port_num)
             time.sleep(1)
 
-        if not connection[0] == "pong":
+        if connection[0] == ConnectionRefusedError:
+            st.exception(connection[1])
+        elif not connection[0] == "pong":
             st.exception(connection[0])
         else:
             st.success('Connection OK')

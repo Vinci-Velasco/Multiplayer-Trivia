@@ -18,10 +18,11 @@ def listening_thread(client_socket, addr, message_queue):
         while True:
             message = client_socket.recv(BUFFER_SIZE).decode("utf8")
             
-            # Terminate listening thread when client socket is inactive
+            # terminate listening thread when client socket is inactive
             if not message:
                 client.id = PlayerNumber[addr][0]
                 print(f"...closing listening thread for client {client}")
+                # TODO: remove client from list of connections
                 break
             
             print(f"Recieved message from {addr}")
@@ -30,6 +31,7 @@ def listening_thread(client_socket, addr, message_queue):
             if message == "ping":
                 print("....got ping, sent pong")
                 client_socket.send("pong".encode('utf-8'))
+            # add message to message queue
             else:
                 for m in message.split("\n"):
                     if m != "":
@@ -126,18 +128,24 @@ def send_data_to_all_clients(data_type, label):
 
 #### Req_Data: Handle client's requests for server data, send back a response containing the requested data
 def parse_data_req(client, data_type, request):
-    data = "error"
+    data = None
+    data_type = None
 
     if request == "my_id":
         data = client.id
+        data_type = "String"
 
     elif request == "all_players":
         data = get_all_players()
+        data_type = "Object"
 
     elif request == "my_player":
         data = client.player_data
+        data_type = "Object"
 
     if request == "lobby_state":
+        data_type = "String"
+
         all_players = get_all_players()
         global current_state
         last_state = current_state
@@ -152,15 +160,15 @@ def parse_data_req(client, data_type, request):
         
         data = current_state
     
+    # Serialize Objects
     if data_type == "Object":
         data = pickle.dumps(data)
-
 
     # Send the requested data back to the client
     send_response_to_client(client, label=request, data=data)
 
 #### Automatically format data before sending based on data_type
-# TODO: LEGACY, ABOUT TO BE DEPRECATED. all data sent to client needs to be labelled!
+# TODO: LEGACY, all data going to client needs to be labelled. i can redirect this to the new send data function later to minimize refactoring needed
 def send_data_to_client(client, data_type, data):
     # Encode String before sending
     if data_type == "String":
