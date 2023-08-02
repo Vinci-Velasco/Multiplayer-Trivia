@@ -1,22 +1,15 @@
 import socket
 import threading
-import time
 import pickle
 from queue import Queue
 from src import player
 from game import lobby_state
 
 HOST = "127.0.0.1"
-PORT = 7073
-
-
-NUM_PLAYERS = 5
-
-min_players = 3
-max_players = 5
+PORT = 7070
 
 clients = {}
-current_state = "WAIT"
+current_state = "INIT_LOBBY"
 
 # Thread that deals with listening to clients
 def listening_thread(client_socket, addr, message_queue):
@@ -25,12 +18,14 @@ def listening_thread(client_socket, addr, message_queue):
         while True:
             message = client_socket.recv(BUFFER_SIZE).decode("utf8")
             
+            # Terminate listening thread when client socket is inactive
             if not message:
                 client.id = PlayerNumber[addr][0]
                 print(f"...closing listening thread for client {client}")
                 break
             
             print(f"Recieved message from {addr}")
+
             # receive a ping
             if message == "ping":
                 print("....got ping, sent pong")
@@ -39,7 +34,6 @@ def listening_thread(client_socket, addr, message_queue):
                 for m in message.split("\n"):
                     if m != "":
                         message_queue.put((m, addr))
-            # client_socket.send("Server acknowledges your message\n".encode())
          
 # Custom thread class that creates new threads once connections come in
 class Recieve_Connection_Thread(threading.Thread):
@@ -80,13 +74,6 @@ class Recieve_Connection_Thread(threading.Thread):
 
             PlayerNumber[addr] =  client_id, client_socket
 
-            # client_socket.send(f"Connection to server established. You're Player #{connections}\n".encode("utf8"))
-
-            # for client_socket in client_sockets:
-               
-            #     client_socket.send(str(f"Players: {client_addrs} are in the lobby!\n").encode("utf8"))
-
-
         print(f"Done with connections ({connections}/{MAX_CONNECTIONS})")
 
 
@@ -103,6 +90,7 @@ class Client():
         self.addr = addr
         self.player_data = player # use Player class from src/player.py
 
+# Returns a list of all Player data from all connected clients
 def get_all_players():
     all_players = []
     for c in clients.values():
@@ -130,15 +118,15 @@ def allPlayersReady(ready_clients):
     return proceedOrNot
 
 
-#Token functions------USE if needed-------------------------------------------------------------------------------
+#Token functions------ if needed-------------------------------------------------------------------------------
 
-def send_data_to_all_clients(data_type, request):
+def send_data_to_all_clients(data_type, label):
     for c in clients:
-        parse_data_req(clients[c], data_type, request)
+        parse_data_req(clients[c], data_type, label)
 
 #### Req_Data: Handle client's requests for server data, send back a response containing the requested data
 def parse_data_req(client, data_type, request):
-    data = ""
+    data = "error"
 
     if request == "my_id":
         data = client.id
@@ -157,10 +145,8 @@ def parse_data_req(client, data_type, request):
         
         if current_state == "FIND_HOST":
             host = lobby_state.calculate_host(all_players)
-            # TODO: send host to all clients, wait for ACK from all clients
             current_state = "HOST_FOUND"
         elif current_state == "START_GAME":
-            # TODO: break out of lobby loop and start game
             # Tell all clients that they can start the game
             pass
         
@@ -168,14 +154,14 @@ def parse_data_req(client, data_type, request):
     
     if data_type == "Object":
         data = pickle.dumps(data)
-    # else:
-    #     data = f"{data}".encode("utf-8")
+
 
     # Send the requested data back to the client
-    send_data_to_client(client, "Response", data, request=request)
+    send_response_to_client(client, label=request, data=data)
 
 #### Automatically format data before sending based on data_type
-def send_data_to_client(client, data_type, data, request=None):
+# TODO: LEGACY, ABOUT TO BE DEPRECATED. all data sent to client needs to be labelled!
+def send_data_to_client(client, data_type, data):
     # Encode String before sending
     if data_type == "String":
         print(f"....sending string to Client {client.id}: {data}")
@@ -186,17 +172,18 @@ def send_data_to_client(client, data_type, data, request=None):
         print(f"....sending object to Client {client.id}: {data}")
         data_object = pickle.dumps(data)
         client.socket.send(data_object)
-    
-    # Send Data to client 
-    # sendall makes sure the entire response gets transmitted vs. send
-    elif data_type == "Response":
-        response = {"header":"Send_Data", "request":request, "data":data}
-        client.socket.sendall(pickle.dumps(response))
 
-#### Send to all data
+#### Send message to client with header and label that describes the data
+# sendall makes sure the entire response gets transmitted (instead of send)
+def send_response_to_client(client, label, data):
+    response = {"header":"Send_Data", "label":label, "data":data}
+    print(f"....sending response to Client {client.id}: {response}")
+    client.socket.sendall(pickle.dumps(response))
+
+#### Send to all clients
 # Returns an error if there's an issue
 def send_data_to_all():
-
+    pass
 
 def readyUp(ready_clients, PlayerNumber, client_sockets):
     ready_clients[PlayerNumber-1] = True

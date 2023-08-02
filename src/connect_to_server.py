@@ -65,13 +65,13 @@ def update_queue():
 def parse_message_object(message):
 
     if message["header"] == "Send_Data":
-        request = message["request"]
+        label = message["label"]
         data = message["data"]
 
-        if request == "my_id":
+        if label == "my_id":
             my_id = int(data)
             st.session_state.my_id = my_id
-        elif request == "all_players":
+        elif label == "all_players":
             players = {}
             total_votes = 0
             all_players = pickle.loads(data)
@@ -85,7 +85,7 @@ def parse_message_object(message):
                 players[p_id] = p
             st.session_state.players = players 
             st.session_state.total_votes = total_votes
-        elif request == "lobby_state":
+        elif label == "lobby_state":
             # parse_lobby_state(data)
             # meepy does this
             pass
@@ -95,18 +95,18 @@ def parse_message(message):
     tokens = message.split('-')
 
     if tokens[0] == "Send_Data":
-        request = tokens[2]
+        label = tokens[2]
         data = tokens[3]
 
-        if request == "my_id":
+        if label == "my_id":
             my_id = int(data)
             st.session_state.my_id = my_id
-        elif request == "all_players":
+        elif label == "all_players":
             print(data)
             all_players = pickle.loads(data.encode("utf-8"))
             st.session_state.all_players = all_players 
             print(all_players)
-        elif request == "lobby_state":
+        elif label == "lobby_state":
             # parse_lobby_state(data)
             # meepy does this
             pass
