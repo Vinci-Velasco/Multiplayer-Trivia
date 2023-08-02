@@ -7,7 +7,7 @@ MIN_PLAYERS = 3
 
 
 #### Get current state of game
-def get_game_state(players, last_state):
+def get_state(players, last_state):
     nplayers = len(players)
     
     #we can change these states if needed this is just how I thought the game woudl run -Parm
@@ -57,8 +57,10 @@ def get_game_state(players, last_state):
 
         if(has_someone_won(players)):
             return "GAME_OVER"
-        else:
-            return "SENDING_QUESTION"
+        
+        return "GOT_HOST_CHOICE"
+
+        #SERVER can manually decide to change state to sending question or back to waiting for buzz
 
     #server says game is over and which player won/display all points?
     elif last_state == "GAME_OVER":
