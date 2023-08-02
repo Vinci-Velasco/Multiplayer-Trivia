@@ -68,14 +68,15 @@ def ready_up_test():
             time.sleep(3)
             my_socket.send("Req_Data-String-lobby_state".encode("utf8"))
            
-
-
-
-
             BUFFER_SIZE = 1024
    
             data = my_socket.recv(BUFFER_SIZE).decode("utf8")
             print(f"Recived: {data}")
+
+            tokens = data.split('-')
+
+            if(tokens[0] == "READY_UPStart_Game" or tokens[0] == "Start_Game"):
+                break
        
             #on 5th loop client can choose to ready up (only here for testing change as needed)
             if(index == 2):
@@ -93,10 +94,37 @@ def ready_up_test():
                 if(userTestInput == "y"):
                     my_socket.send("Ready_Up-1".encode("utf8"))
 
-
-
-
             index += 1
+
+        while True:
+
+           
+            time.sleep(3)
+        
+            my_socket.send("Req_Data-String-game_state".encode("utf8"))
+           
+            BUFFER_SIZE = 1024
+   
+            data = my_socket.recv(BUFFER_SIZE).decode("utf8")
+            print(f"Received From Game Loop: {data}")
+
+            if(data == "SENDING_QUESTION"):
+                 my_socket.send("Received_Question-NA".encode("utf8"))
+
+
+            if(data == "WAITING_FOR_BUZZ"):
+                userTestInput = input("Would you like to buzz in? ('y' or 'n'): ")
+                if(userTestInput == "y"):
+                    my_socket.send("Buzzing-NA".encode("utf8"))
+
+            
+            if(data == "WAITING_FOR_HOSTS_CHOICE"):
+                userTestInput = input("You are the host: is the answer correct or not? ('y' or 'n'): ")
+                if(userTestInput == "y"):
+                    my_socket.send("Host_Choice-No".encode("utf8"))
+                
+
+
 
 
 

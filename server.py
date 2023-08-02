@@ -139,6 +139,34 @@ def allPlayersReady(ready_clients):
         index += 1
     return proceedOrNot
 
+def received_question_confirmation(sender_id):
+
+    clients[sender_id].player_data.received_question = True
+   
+
+def clear_received_question():
+    
+    all_players = get_all_players()
+
+    index = 1
+    for p in all_players:
+
+         clients[index].player_data.received_question = False
+         index += 1
+
+
+def try_to_grab_buzz_lock(sender_id):
+
+    for p in all_players:
+
+        if(p.has_lock == True and p.id != clients[sender_id].player_data.id):
+            return
+        
+    
+        clients[sender_id].player_data.has_lock = True
+        
+
+
 
 #Token functions------USE if needed-------------------------------------------------------------------------------
 def send_data_to_client(client, data_type, data):
@@ -319,6 +347,7 @@ if __name__ == "__main__":
     host_voted = False
     answer_came = False
     give_player_point = False
+    current_state = "SENDING_QUESTION"
     while game_loop:
 #gets the message and its coresponding sender adderess
         message, addr = message_queue.get()    
@@ -364,6 +393,11 @@ if __name__ == "__main__":
 
             if request == "game_state":
                 all_players = get_all_players()
+                print("---------------------\n")
+                print((f"#1: {all_players[0].has_lock}\n"))
+                print((f"#2: {all_players[1].has_lock}\n"))
+                print((f"#3: {all_players[2].has_lock}\n"))
+                print("=====================\n")
                 last_state = current_state
                 current_state = game_state.get_state(all_players, last_state)
            
@@ -372,9 +406,15 @@ if __name__ == "__main__":
                     pass
                     #TODO: Send latest question to all clients
 
+                elif current_state == "WAITING_FOR_BUZZ":
+
+                    clear_received_question()
+
 
                 elif current_state == "WAITING_FOR_ANSWER":
-                    pass
+                    
+                    #remove this when this gets filled out 
+                    current_state = "GOT_ANSWER"
                     #TODO: start timer thread to time player who buzzed in
                     
                     #if(timer runs out):
@@ -400,21 +440,29 @@ if __name__ == "__main__":
                         host_voted = False
                         answer_came = False
 
-                        for p in all_players:
-                            if p.has_lock == True:
-                                p.has_lock = False
+                        index = 1
 
-                        current_state = "WAITING_FOR_BUZZ"
+                        for p in all_players:
+                     
+                            if clients[index].player_data.has_lock == True:
+                                clients[index].player_data.has_lock == False
+
+                            index += 1
+
+                        #current_state = "WAITING_FOR_BUZZ"
                        
                     else:
 
+                        inex = 1
                         for p in all_players:
-                            if p.has_lock == True:
-                                p.has_lock = False
+
+                            if clients[index].player_data.has_lock == True:
+                                clients[index].player_data.has_lock == False
                                 give_player_point = False
                                 host_voted = False
                                 answer_came = False
-                                p.increaseScore()
+                                clients[index].player_data.increaseScore()
+                            index += 1
 
                         current_state = "SENDING_QUESTION"
 
@@ -437,7 +485,7 @@ if __name__ == "__main__":
         elif (tokens[0] == "Buzzing"):
            
            #whoever gets the lock set their player.has_lock to true once the GOT_HOST_CHOICE is over
-           pass
+           try_to_grab_buzz_lock(sender_id)
 
         elif (tokens[0] == "Host_Choice"):
            
@@ -450,11 +498,12 @@ if __name__ == "__main__":
         elif (tokens[0] == "Answer"):
 
             answer_came = True
-            pass
-        elif (tokens[0] == "Recieved_Question"):
+        
+        elif (tokens[0] == "Received_Question"):
 
             #whoever sends this must have their player.received_question set to true and will be changed once the waiting for buzz state is entered
-            pass
+            received_question_confirmation(sender_id)
+            
        
         elif (tokens[0] == "ACK"):
             data = tokens[1]
