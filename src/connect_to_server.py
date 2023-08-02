@@ -1,5 +1,5 @@
 #### Establishes socket connection to Server, initializes listening thread and message queue
-# message_callback() is run each time a new message arrives from the server
+# update_queue() is run each time a new message arrives from the server
 
 import streamlit as st
 import time
@@ -19,39 +19,32 @@ def test_connect(host, port):
     except ConnectionRefusedError as e:
         return e, "Could not connect to server. Check inputs and make sure server.py is running."
 
-def listening_thread(sock, message_queue, message_callback):
+def listening_thread(sock, message_queue, update_queue):
     BUFFER_SIZE = 1024 # change size when needed
     with sock:
         while True:
             try:
                 message = sock.recv(BUFFER_SIZE).decode("utf8")
-                message_queue.put((message))
-                # Run message_callback() to update frontend when a new message arrives
-                message_callback()
             except ConnectionResetError as e:
                 # connection to server was interrupted
                 break
+            else:
+                message_queue.put((message))
+                # Run update_queue() to update frontend when a new message arrives in queue
+                update_queue()
 
 
 #### Runs each time a new message arrives from the server
-def message_callback():
+def update_queue():
     message_queue = st.session_state.message_queue
-    num_messages = st.session_state.num_messages
 
-    if message_queue.empty():
-        st.session_state.message_in_queue = False
-    else:
-        st.session_state.message_in_queue = True
-    # Update session state if there are new messages in Queue
-    # if message_queue.qsize() <= num_messages:
-    #     print(message_queue.qsize())
-    #     st.session_state.message_in_queue = False
-    # else:
-    #     message = message_queue.get()
-    #     print(f"received messsage: {message}")
-
-    #     st.session_state.num_messages += 1
-    #     st.session_state.message_in_queue = True
+    if st.session_state.new_message == None:
+        try:
+            message = message_queue.get(block=False)
+        except Queue.Empty:
+            print("error, queue is empty")
+        else:
+            st.session_state.new_message = message
 
     # Refresh app + message queue every 5 seconds
     time.sleep(5)
@@ -61,7 +54,7 @@ def init_message_queue():
     queue = Queue()
     s = st.session_state.my_socket
     t = threading.Thread(
-    target=listening_thread, args=(s, queue, message_callback))
+    target=listening_thread, args=(s, queue, update_queue))
 
     # Add thread to Streamlit's application context
     ctx = get_script_run_ctx()
@@ -72,7 +65,7 @@ def init_message_queue():
     t.start()
 
     # Add queue to Streamlit's session state, so it can be accessed throughout the application instance
-    st.session_state.message_in_queue = False
+    st.session_state.new_message = None
     st.session_state.num_messages = 0
     st.session_state.message_queue = queue
 

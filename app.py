@@ -64,13 +64,17 @@ def main():
 
     else:
         s = st.session_state.my_socket
+        message = st.session_state.new_message
 
-        if st.session_state.message_in_queue == True:
+        #### Upate from Message Queue
+        if message != None:
             # message_queue = st.session_state.message_queue
-            # st.write(message_queue.get())
             st.balloons()
+            st.write(message)
+            client.req_data_string(s, "my_id")
+            st.session_state.new_message = None
         else:
-            st.write("you have no messages")
+            st.write("you have no new messages")
             client.req_data_string(s, "my_id")
 
         # if 'game_start' not in st.session_state:
