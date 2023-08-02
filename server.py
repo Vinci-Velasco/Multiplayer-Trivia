@@ -22,6 +22,11 @@ def listening_thread(client_socket, addr, message_queue):
     with client_socket:
         while True:
             message = client_socket.recv(BUFFER_SIZE).decode("utf8")
+            # when a TCP client disconnects, server receives empty messages (0 bytes)
+            if len(message) == 0:
+                print(f"Client {addr} disconnected")
+                client_socket.close()
+                break
             
             print(f"Recieved message from {addr}")
             # receive a ping
@@ -122,6 +127,10 @@ def allPlayersReady(ready_clients):
 
 #Token functions------USE if needed-------------------------------------------------------------------------------
 def send_data_to_client(client, data_type, data):
+    # if client disconnected, don't do anything
+    if client.fileno() == -1:
+        return
+    
     # Encode String before sending
     if data_type == "String":
         print(f"SEND {data} string to Client {client.id}: {data}")
