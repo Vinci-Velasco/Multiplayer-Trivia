@@ -9,6 +9,7 @@ from game import lobby_state
 HOST = "127.0.0.1"
 PORT = 7073
 
+
 NUM_PLAYERS = 5
 
 min_players = 3
@@ -35,7 +36,9 @@ def listening_thread(client_socket, addr, message_queue):
                 print("....got ping, sent pong")
                 client_socket.send("pong".encode('utf-8'))
             else:
-                message_queue.put((message, addr))
+                for m in message.split("\n"):
+                    if m != "":
+                        message_queue.put((m, addr))
             # client_socket.send("Server acknowledges your message\n".encode())
          
 # Custom thread class that creates new threads once connections come in
@@ -129,6 +132,10 @@ def allPlayersReady(ready_clients):
 
 #Token functions------USE if needed-------------------------------------------------------------------------------
 
+def send_data_to_all_clients(data_type, request):
+    for c in clients:
+        parse_data_req(clients[c], data_type, request)
+
 #### Req_Data: Handle client's requests for server data, send back a response containing the requested data
 def parse_data_req(client, data_type, request):
     data = ""
@@ -159,12 +166,16 @@ def parse_data_req(client, data_type, request):
         
         data = current_state
     
+    if data_type == "Object":
+        data = pickle.dumps(data)
+    # else:
+    #     data = f"{data}".encode("utf-8")
+
     # Send the requested data back to the client
-    response = f"Send_Req-{data_type}-{request}-{data}"
-    send_data_to_client(client, data_type, response)
+    send_data_to_client(client, "Response", data, request=request)
 
 #### Automatically format data before sending based on data_type
-def send_data_to_client(client, data_type, data):
+def send_data_to_client(client, data_type, data, request=None):
     # Encode String before sending
     if data_type == "String":
         print(f"....sending string to Client {client.id}: {data}")
@@ -175,6 +186,17 @@ def send_data_to_client(client, data_type, data):
         print(f"....sending object to Client {client.id}: {data}")
         data_object = pickle.dumps(data)
         client.socket.send(data_object)
+    
+    # Send Data to client 
+    # sendall makes sure the entire response gets transmitted vs. send
+    elif data_type == "Response":
+        response = {"header":"Send_Data", "request":request, "data":data}
+        client.socket.sendall(pickle.dumps(response))
+
+#### Send to all data
+# Returns an error if there's an issue
+def send_data_to_all():
+
 
 def readyUp(ready_clients, PlayerNumber, client_sockets):
     ready_clients[PlayerNumber-1] = True
@@ -198,7 +220,6 @@ def answer():
 def buzzing():
     pass
 
-
 #Token functions-------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
@@ -221,6 +242,10 @@ if __name__ == "__main__":
     #### Lobby loop ------------------------------------------------------------------
     host_found = False
     all_ready = False
+
+    #### Internal Lobby states and values
+    host = None
+    total_votes = 0
     while not (all_ready and host_found):
         #gets the message and its coresponding sender adderess
         message, addr = message_queue.get()    
@@ -229,10 +254,6 @@ if __name__ == "__main__":
         #### Information about the Sender
         sender_id = PlayerNumber[addr][0]
         client = clients[sender_id]
-
-        #### Internal Lobby states and values
-        host = None
-        total_votes = 0
 
         #### application layer protocol for lobby (Parse Tokens)
         tokens = message.split('-')
@@ -246,7 +267,9 @@ if __name__ == "__main__":
             vote_id = int(tokens[1])
             clients[vote_id].player_data.votes += 1
             clients[sender_id].player_data.already_voted = True
-
+            total_votes += 1
+            send_data_to_all_clients("Object","all_players")
+            
         # TODO: when all players have finished voting, calculate final Host_choice and send to client
         # then set Player(Host_Choice).isHost = True  
 

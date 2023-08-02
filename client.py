@@ -9,16 +9,16 @@ PORT = 7070
 
 #### Data Strings need to be decoded with utf8
 def req_data_string(s, string):
-    s.send(f"Req_Data-String-{string}".encode('utf8'))
+    s.send(f"Req_Data-String-{string}\n".encode('utf8'))
 
 #### Data Objects need to be serialized/deserialized with pickle
 def req_data_object(s, object):
     BUFFER_SIZE = 1024
-    s.send(f"Req_Data-Object-{object}".encode('utf8'))
+    s.send(f"Req_Data-Object-{object}\n".encode('utf8'))
 
-    object_data = s.recv(BUFFER_SIZE)
-    object = pickle.loads(object_data)
-    return object
+    # object_data = s.recv(BUFFER_SIZE)
+    # object = pickle.loads(object_data)
+    # return object
 
 def ready_up_test():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as my_socket:

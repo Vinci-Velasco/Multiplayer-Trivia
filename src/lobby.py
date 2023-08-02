@@ -39,7 +39,7 @@ def find_host():
         st.session_state.vote_over = True
         st.experimental_rerun()
 
-def main(state):
+def main():
     if 'i_voted' not in st.session_state:
         init()
 

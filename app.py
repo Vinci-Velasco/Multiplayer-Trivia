@@ -8,15 +8,11 @@ def init_data(s):
 
     # parse data from client
     client.req_data_string(s, "my_id")
-    client.req_data_object(s, "all_players_list")
+    client.req_data_object(s, "all_players")
 
     my_id = -1
-
     all_players = []
-    
     total_votes = 0
-
-
 
     # player_ids = client.req_data_object(s, "player_id_list")
 
@@ -35,6 +31,7 @@ def init_data(s):
     st.session_state.my_id = my_id
     st.session_state.players = players
     st.session_state.total_votes = total_votes
+    st.session_state.lobby_state = "LOADING"
     # st.session_state.player_ids = player_ids
 
 def main():
@@ -50,23 +47,20 @@ def main():
         s = st.session_state.my_socket
         message = st.session_state.new_message
 
-        # if 'game_start' not in st.session_state:
-        #     if 'my_id' not in st.session_state:
-        #         init_data(s)
-        #     lobby_state = client.update_lobby(s)
-        #     if lobby_state == "VOTE":
-        #         pass
-        #     lobby.main(lobby_state)
+        if 'game_start' not in st.session_state:
+            if 'my_id' not in st.session_state:
+                init_data(s)
+            lobby.main()
 
         #### Upate from Message Queue
-        if message != None:
-            st.balloons()
-            st.write(message)
-            client.req_data_string(s, "my_id")
-            st.session_state.new_message = None
-        else:
-            st.write("you have no new messages")
-            client.req_data_string(s, "my_id")
+        # if message != None:
+        #     st.balloons()
+        #     st.write(message)
+        #     client.req_data_string(s, "my_id")
+        #     st.session_state.new_message = None
+        # else:
+        #     st.write("you have no new messages")
+        #     client.req_data_string(s, "my_id")
 
 if __name__ == '__main__':
     main()
