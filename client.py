@@ -61,6 +61,14 @@ def update_lobby(s):
 def ready_up_test():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as my_socket:
         my_socket.connect((HOST, PORT))
+        BUFFER_SIZE = 1024
+        my_id = 0
+        host_id = 0
+
+        my_socket.send("Req_Data-String-my_id".encode("utf8"))
+        my_id = my_socket.recv(BUFFER_SIZE).decode("utf8")
+
+        print(f"You are player: {my_id}")
 
 
         index = 0
@@ -68,7 +76,7 @@ def ready_up_test():
             time.sleep(3)
             my_socket.send("Req_Data-String-lobby_state".encode("utf8"))
            
-            BUFFER_SIZE = 1024
+           
    
             data = my_socket.recv(BUFFER_SIZE).decode("utf8")
             print(f"Recived: {data}")
@@ -77,13 +85,15 @@ def ready_up_test():
 
             if(tokens[0] == "READY_UPStart_Game" or tokens[0] == "Start_Game"):
                 break
-       
+
+            if(tokens[0] == "Host_Number"):
+
+                host_id = tokens[1]
+     
             #on 5th loop client can choose to ready up (only here for testing change as needed)
             if(index == 2):
                 userTestInput = input("Who would you like to vote for? (#): ")
 
-
-               
                 my_socket.send(f"Vote_Host-{userTestInput}".encode("utf8"))
                
          
@@ -108,20 +118,30 @@ def ready_up_test():
             data = my_socket.recv(BUFFER_SIZE).decode("utf8")
             print(f"Received From Game Loop: {data}")
 
+        
+
             if(data == "SENDING_QUESTION"):
                  my_socket.send("Received_Question-NA".encode("utf8"))
 
-
+            
             if(data == "WAITING_FOR_BUZZ"):
-                userTestInput = input("Would you like to buzz in? ('y' or 'n'): ")
-                if(userTestInput == "y"):
-                    my_socket.send("Buzzing-NA".encode("utf8"))
+
+                if(host_id != my_id):
+
+                    userTestInput = input("Would you like to buzz in? ('y' or 'n'): ")
+                    if(userTestInput == "y"):
+                        my_socket.send("Buzzing-NA".encode("utf8"))
 
             
             if(data == "WAITING_FOR_HOSTS_CHOICE"):
-                userTestInput = input("You are the host: is the answer correct or not? ('y' or 'n'): ")
-                if(userTestInput == "y"):
-                    my_socket.send("Host_Choice-No".encode("utf8"))
+
+                if(host_id == my_id):
+                    userTestInput = input("You are the host: is the answer correct or not? ('y' or 'n'): ")
+                    if(userTestInput == "y"):
+                        my_socket.send("Host_Choice-Y".encode("utf8"))
+                    else:
+                        my_socket.send("Host_Choice-N".encode("utf8"))
+
                 
 
 
