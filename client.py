@@ -9,11 +9,12 @@ def listening_thread(sock, message_queue):
     BUFFER_SIZE = 1024
     while True:
         try:
-            recv = sock.recv(BUFFER_SIZE) # try to receive
-            message = recv.decode("utf-8") # got to receive
-        except UnicodeDecodeError: # If decoding doesn't work, message is not a string. Try deserializing with pickle
+            recv = sock.recv(BUFFER_SIZE)
+            message = recv.decode("utf-8")
+        except UnicodeDecodeError: # If decoding doesn't work, message is not a string. Deserialize with pickle
             message = pickle.loads(recv)
-            print(f"Received message from server with pickle: {message}")
+            to_console = message["header"] + "-" + message["label"]
+            print(f"Received message from server: {to_console}")
             message_queue.put(message)
             update_queue(message_queue)
         else:

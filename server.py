@@ -9,7 +9,6 @@ HOST = "127.0.0.1"
 PORT = 7070
 
 clients = {}
-current_state = "INIT_LOBBY"
 
 # Thread that deals with listening to clients
 def listening_thread(client_socket, addr, message_queue):
@@ -20,14 +19,12 @@ def listening_thread(client_socket, addr, message_queue):
             try:
                 message = client_socket.recv(BUFFER_SIZE).decode("utf8")
             except ConnectionResetError as e:
-                id = remove_client_from_connections(client_socket)
-                print(f"ConnectionResetError...closing listening thread for client {id}")
+                disconnect_client(client_socket)
                 break
             else:
                 # terminate listening thread when client socket is inactive
                 if not message:
-                    id = remove_client_from_connections(client_socket)
-                    print(f"...closing inactive listening thread for client {id}")
+                    disconnect_client(client_socket)
                     break
                 
                 print(f"Recieved message from {addr}")
@@ -72,7 +69,7 @@ class Recieve_Connection_Thread(threading.Thread):
             thread.start()
             connections += 1
 
-           # Create a new Client and associated Player object, add to global dict
+           # Create a new Client and associated Player serialize, add to global dict
             global clients
             client_id = connections
             p = player.Player(client_id)
@@ -97,18 +94,19 @@ class Client():
         self.addr = addr
         self.player_data = player # use Player class from src/player.py
 
-def remove_client_from_connections(client_socket):
-    client = None
+def disconnect_client(client_socket):
+    target = None
     for c in clients.values():
         if c.socket == client_socket:
-            client = c
+            target = c
             break
     
-    client_sockets.remove(client_socket)
-    client_addrs.remove(client.addr)
-    del PlayerNumber[client.addr]
-    del clients[client.id]
-    return client.id
+    if target != None:
+        client_sockets.remove(client_socket)
+        client_addrs.remove(target.addr)
+        del PlayerNumber[target.addr]
+        del clients[target.id]
+        print(f"...closing inactive listening thread for client {client.id}")
 
 # Returns a list of all Player data from all connected clients
 def get_all_players():
@@ -137,33 +135,52 @@ def allPlayersReady(ready_clients):
         index += 1
     return proceedOrNot
 
+  #### Send/Parse Messages ------------------------------------------------------------------
 
-#Token functions------ if needed-------------------------------------------------------------------------------
+#### Automatically format data before sending based on data_type
+# TODO: LEGACY, needs to be redone
+def send_data_to_client(client, data_type, data):
+    # Encode String before sending
+    if data_type == "String":
+        print(f"....sending string to Client {client.id}: {data}")
+        client.socket.send(str(data).encode('utf8'))
 
-def send_data_to_all_clients(data_type, label):
+    # Serialize Object before sending            
+    elif data_type == "Object":
+        print(f"....sending serialize to Client {client.id}: {data}")
+        data_object = pickle.dumps(data)
+        client.socket.send(data_object)
+
+#### Send message to client with header and label that describes the data
+def send_message_to_client(client, header, label, data):
+    message = {"header": header, "label": label, "data": data}
+    print(f"....sending message to Client {client.id}: {header}-{label}-<data>")
+    client.socket.sendall(pickle.dumps(message))
+
+#### Send message to all clients
+def send_message_to_all(header, label, data):
+    message = {"header": header, "label":label, "data":data}
+    print(f"....sending message to all clients: {header}-{label}-<data>")
     for c in clients:
-        parse_data_req(clients[c], data_type, label)
+        c.socket.sendall(pickle.dumps(message))
 
-#### Req_Data: Handle client's requests for server data, send back a response containing the requested data
-def parse_data_req(client, data_type, request):
+#### Handle requests for server data, send back a response containing the requested data
+def parse_data_req(client, request, send_to_all=False):
     data = None
-    data_type = None
+    serialize = False
 
     if request == "my_id":
         data = client.id
-        data_type = "String"
 
     elif request == "all_players":
         data = get_all_players()
-        data_type = "Object"
+        serialize = True
 
     elif request == "my_player":
         data = client.player_data
-        data_type = "Object"
+        serialize = True
 
     if request == "lobby_state":
-        data_type = "String"
-
         all_players = get_all_players()
         global current_state
         last_state = current_state
@@ -178,38 +195,17 @@ def parse_data_req(client, data_type, request):
         
         data = current_state
     
-    # Serialize Objects
-    if data_type == "Object":
+    # Serialize data if needed
+    if serialize == True:
         data = pickle.dumps(data)
+    
+    if send_to_all == True: 
+        send_message_to_all("Send_Data", request, data) 
+    else:
+        send_message_to_client(client, "Send_Data", request, data)
 
-    # Send the requested data back to the client
-    send_response_to_client(client, label=request, data=data)
 
-#### Automatically format data before sending based on data_type
-# TODO: LEGACY, all data going to client needs to be labelled. i can redirect this to the new send data function later to minimize refactoring needed
-def send_data_to_client(client, data_type, data):
-    # Encode String before sending
-    if data_type == "String":
-        print(f"....sending string to Client {client.id}: {data}")
-        client.socket.send(str(data).encode('utf8'))
-
-    # Serialize Object before sending            
-    elif data_type == "Object":
-        print(f"....sending object to Client {client.id}: {data}")
-        data_object = pickle.dumps(data)
-        client.socket.send(data_object)
-
-#### Send message to client with header and label that describes the data
-# sendall makes sure the entire response gets transmitted (instead of send)
-def send_response_to_client(client, label, data):
-    response = {"header":"Send_Data", "label":label, "data":data}
-    print(f"....sending response to Client {client.id}: {response}")
-    client.socket.sendall(pickle.dumps(response))
-
-#### Send to all clients
-# Returns an error if there's an issue
-def send_data_to_all():
-    pass
+#Token functions------ if needed-------------------------------------------------------------------------------
 
 def readyUp(ready_clients, PlayerNumber, client_sockets):
     ready_clients[PlayerNumber-1] = True
@@ -221,6 +217,12 @@ def readyUp(ready_clients, PlayerNumber, client_sockets):
 def hostChoice():
     pass
 
+
+def add_host_vote(client, vote_id):
+    clients[vote_id].player_data.votes += 1
+    clients[client.id].player_data.already_voted = True
+    # update all clients
+    parse_data_req(None, "all_players", send_to_all=True)
 
 def voteHost():
     pass
@@ -273,18 +275,12 @@ if __name__ == "__main__":
         if (tokens[0] == "Req_Data"):
             data_type = tokens[1]
             request = tokens[2]
-            parse_data_req(client, data_type, request)
+            parse_data_req(client, request)
                     
         elif (tokens[0] == "Vote_Host"):
             vote_id = int(tokens[1])
-            clients[vote_id].player_data.votes += 1
-            clients[sender_id].player_data.already_voted = True
-            total_votes += 1
-            send_data_to_all_clients("Object","all_players")
+            add_host_vote(client, vote_id)
             
-        # TODO: when all players have finished voting, calculate final Host_choice and send to client
-        # then set Player(Host_Choice).isHost = True  
-
         elif (tokens[0] == "Ready_Up"):
             ready_Clients = readyUp(ready_clients, PlayerNumber[addr][0], client_sockets)
 
