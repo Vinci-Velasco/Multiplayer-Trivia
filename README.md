@@ -22,7 +22,7 @@ pip install streamlit
 ```
 conda activate trivia
 cd Multiplayer-Trivia
-streamlit run app.py
+streamlit run start.py
 ```
 
 See the website for more information on installation: https://docs.streamlit.io/library/get-started/installation
