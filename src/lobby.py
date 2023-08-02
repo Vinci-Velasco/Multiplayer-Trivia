@@ -46,7 +46,6 @@ def main():
     ## Update Session State
     update_players()
     
-
     ## Draw GUI
     global cols
     draw_lobby(cols, players, vote_callback, ready_callback, find_host)
