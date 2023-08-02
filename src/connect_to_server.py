@@ -21,17 +21,16 @@ def test_connect(host, port):
 
 def listening_thread(sock, message_queue, update_queue):
     BUFFER_SIZE = 1024 # change size when needed
-    with sock:
-        while True:
-            try:
-                message = sock.recv(BUFFER_SIZE).decode("utf8")
-            except ConnectionResetError as e:
-                # connection to server was interrupted
-                break
-            else:
-                message_queue.put((message))
-                # Run update_queue() to update frontend when a new message arrives in queue
-                update_queue()
+    while True:
+        try:
+            message = sock.recv(BUFFER_SIZE).decode("utf8")
+        except ConnectionResetError as e:
+            # connection to server was interrupted
+            break
+        else:
+            message_queue.put((message))
+            # Run update_queue() to update frontend when a new message arrives in queue
+            update_queue()
 
 
 #### Runs each time a new message arrives from the server
