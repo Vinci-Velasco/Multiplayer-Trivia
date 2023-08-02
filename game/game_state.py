@@ -26,7 +26,12 @@ def get_state(players, last_state):
     #Server waits until a token is parsed which is a buzz
     elif last_state == "WAITING_FOR_BUZZ":
 
-        if(did_somone_buzz == True):
+        #test = did_somone_buzz(players)
+
+        #print(f"test-----------------------sfsfsf: {test}")
+
+
+        if(did_somone_buzz(players) == True):
             return "SOMEONE_BUZZED"
         else:
             return "WAITING_FOR_BUZZ"

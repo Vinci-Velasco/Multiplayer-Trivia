@@ -160,7 +160,7 @@ def try_to_grab_buzz_lock(sender_id):
     for p in all_players:
 
         if(p.has_lock == True and p.id != clients[sender_id].player_data.id):
-            return
+            return False
         
     
         clients[sender_id].player_data.has_lock = True
