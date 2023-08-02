@@ -7,7 +7,7 @@ from src import player
 from game import lobby_state
 
 HOST = "127.0.0.1"
-PORT = 7070
+PORT = 7073
 
 NUM_PLAYERS = 5
 
@@ -23,6 +23,11 @@ def listening_thread(client_socket, addr, message_queue):
     with client_socket:
         while True:
             message = client_socket.recv(BUFFER_SIZE).decode("utf8")
+            
+            if not message:
+                client.id = PlayerNumber[addr][0]
+                print(f"...closing listening thread for client {client}")
+                break
             
             print(f"Recieved message from {addr}")
             # receive a ping
@@ -131,7 +136,7 @@ def parse_data_req(client, data_type, request):
     if request == "my_id":
         data = client.id
 
-    elif request == "all_players_list":
+    elif request == "all_players":
         data = get_all_players()
 
     elif request == "my_player":
