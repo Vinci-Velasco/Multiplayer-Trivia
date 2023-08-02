@@ -24,8 +24,14 @@ def listening_thread(client_socket, addr, message_queue):
             message = client_socket.recv(BUFFER_SIZE).decode("utf8")
             # when a TCP client disconnects, server receives empty messages (0 bytes)
             if len(message) == 0:
-                print(f"Client {addr} disconnected")
+                # set client player disconnected status to true
+                for client in clients:
+                    if clients[client].addr == addr:
+                        clients[client].player_data.disconnected = True
+                    print(clients[client].player_data.disconnected)
+                # close socket and stop listening
                 client_socket.close()
+                print(f"Client {addr} disconnected")
                 break
             
             print(f"Recieved message from {addr}")
