@@ -39,27 +39,21 @@ def req_data_object(s, object):
 def send_ack(s, data):
     s.send(f"ACK-{data}".encode('utf8'))
 
-def update_this_player(s):
-    # send update of this players data to server
-    pass
-
 def update_lobby(s):
     # Ask server for current Lobby State, e.g. if we are in Voting phase or Ready Up phase...
     current_phase = req_data_string(s, "lobby_state")
     if current_phase == "VOTE":
-        # get vote data
+        # change session state variables so that lobby.py shows voting
         # send ack
         pass
     elif current_phase == "FIND_HOST":
-        # get host data
+        # change session state variables so lobby.py shows who is the new host
         # send ack
         pass
     elif current_phase == "READY_UP":
-        # get ready_up data
         # send ack
         pass
     elif current_phase == "START_GAME":
-        # get data to start the game
         # send ack
         pass
 

@@ -32,25 +32,40 @@ def listening_thread(sock, message_queue, update_queue):
             # Run update_queue() to update frontend when a new message arrives in queue
             update_queue()
 
-
 #### Runs each time a new message arrives from the server
 def update_queue():
     message_queue = st.session_state.message_queue
-
-    if st.session_state.new_message == None:
-        try:
-            message = message_queue.get(block=False)
-        except Queue.Empty:
-            print("error, queue is empty")
-        else:
-            st.session_state.new_message = message
+    print("um mm thisis message queue")
+    try:
+        message = message_queue.get(block=False)
+        print(message)
+    except Queue.Empty:
+        print("error, queue is empty")
+    else:
+        parse_message(message)
 
     # Refresh app + message queue every 5 seconds
     time.sleep(5)
     streamlit_loop.call_soon_threadsafe(notify)
 
+def parse_message(message):
+    tokens = message.split('-')
+
+    if tokens[0] == "Send_Data":
+        pass
+
+    elif tokens[0] == "Lobby_State":
+        pass
+
+
 def init_message_queue():
     queue = Queue()
+
+    # Add queue to Streamlit's session state, so it can be accessed throughout the application instance
+    st.session_state.new_message = None
+    st.session_state.num_messages = 0
+    st.session_state.message_queue = queue
+
     s = st.session_state.my_socket
     t = threading.Thread(
     target=listening_thread, args=(s, queue, update_queue))
@@ -62,11 +77,6 @@ def init_message_queue():
     # Make thread daemonic to exit on ctrl+c
     t.daemon = True
     t.start()
-
-    # Add queue to Streamlit's session state, so it can be accessed throughout the application instance
-    st.session_state.new_message = None
-    st.session_state.num_messages = 0
-    st.session_state.message_queue = queue
 
     st.experimental_rerun()
 

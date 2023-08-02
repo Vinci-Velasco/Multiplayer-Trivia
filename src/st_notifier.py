@@ -43,8 +43,6 @@ def get_streamlit_session(session_id: str) -> AppSession:
         raise Exception(f"Streamlit session not found for {session_id}")
     return session
 
-
-
 # This is it!
 # get_browser_session_id needs to be run on the relevant script thread,
 # then you can call the rest of this on other threads.
