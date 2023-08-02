@@ -3,29 +3,13 @@
 import socket
 import time
 import pickle
-import traceback
-import threading
-from queue import Queue
-from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
 
 HOST = "127.0.0.1"
 PORT = 7070
 
-# # Initialize message queue and start listening thread
-# def init_thread(s, queue, callback):
-#     queue = Queue()
-#     thread = threading.Thread(
-#         target=listening_thread, args=(s, queue, callback))
-#     # thread.start()
-#     return thread
-
 #### Data Strings need to be decoded with utf8
 def req_data_string(s, string):
-    BUFFER_SIZE = 1024
     s.send(f"Req_Data-String-{string}".encode('utf8'))
-    
-    # string = s.recv(BUFFER_SIZE).decode('utf8')
-    # return string
 
 #### Data Objects need to be serialized/deserialized with pickle
 def req_data_object(s, object):
@@ -35,27 +19,6 @@ def req_data_object(s, object):
     object_data = s.recv(BUFFER_SIZE)
     object = pickle.loads(object_data)
     return object
-
-def send_ack(s, data):
-    s.send(f"ACK-{data}".encode('utf8'))
-
-def update_lobby(s):
-    # Ask server for current Lobby State, e.g. if we are in Voting phase or Ready Up phase...
-    current_phase = req_data_string(s, "lobby_state")
-    if current_phase == "VOTE":
-        # change session state variables so that lobby.py shows voting
-        # send ack
-        pass
-    elif current_phase == "FIND_HOST":
-        # change session state variables so lobby.py shows who is the new host
-        # send ack
-        pass
-    elif current_phase == "READY_UP":
-        # send ack
-        pass
-    elif current_phase == "START_GAME":
-        # send ack
-        pass
 
 def ready_up_test():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as my_socket:
