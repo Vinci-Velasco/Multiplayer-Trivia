@@ -6,7 +6,7 @@ from src import player
 from game import lobby_state
 
 HOST = "127.0.0.1"
-PORT = 7070
+PORT = 7071
 
 clients = {}
 current_state = "INIT_LOBBY"
@@ -14,28 +14,33 @@ current_state = "INIT_LOBBY"
 # Thread that deals with listening to clients
 def listening_thread(client_socket, addr, message_queue):
     BUFFER_SIZE = 1024 # change size when needed
+
     with client_socket:
         while True:
-            message = client_socket.recv(BUFFER_SIZE).decode("utf8")
-            
-            # terminate listening thread when client socket is inactive
-            if not message:
-                client.id = PlayerNumber[addr][0]
-                print(f"...closing listening thread for client {client}")
-                # TODO: remove client from list of connections
+            try:
+                message = client_socket.recv(BUFFER_SIZE).decode("utf8")
+            except ConnectionResetError as e:
+                id = remove_client_from_connections(client_socket)
+                print(f"ConnectionResetError...closing listening thread for client {id}")
                 break
-            
-            print(f"Recieved message from {addr}")
-
-            # receive a ping
-            if message == "ping":
-                print("....got ping, sent pong")
-                client_socket.send("pong".encode('utf-8'))
-            # add message to message queue
             else:
-                for m in message.split("\n"):
-                    if m != "":
-                        message_queue.put((m, addr))
+                # terminate listening thread when client socket is inactive
+                if not message:
+                    id = remove_client_from_connections(client_socket)
+                    print(f"...closing inactive listening thread for client {id}")
+                    break
+                
+                print(f"Recieved message from {addr}")
+
+                # receive a ping
+                if message == "ping":
+                    print("....got ping, sent pong")
+                    client_socket.send("pong".encode('utf-8'))
+                # add message to message queue
+                else:
+                    for m in message.split("\n"):
+                        if m != "":
+                            message_queue.put((m, addr))
          
 # Custom thread class that creates new threads once connections come in
 class Recieve_Connection_Thread(threading.Thread):
@@ -91,6 +96,19 @@ class Client():
         self.socket = socket
         self.addr = addr
         self.player_data = player # use Player class from src/player.py
+
+def remove_client_from_connections(client_socket):
+    client = None
+    for c in clients.values():
+        if c.socket == client_socket:
+            client = c
+            break
+    
+    client_sockets.remove(client_socket)
+    client_addrs.remove(client.addr)
+    del PlayerNumber[client.addr]
+    del clients[client.id]
+    return client.id
 
 # Returns a list of all Player data from all connected clients
 def get_all_players():
@@ -222,7 +240,6 @@ if __name__ == "__main__":
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # SOCK_STREAM = TCP
     server.bind((HOST, PORT))
     server.listen()
-
 
     # data structures to hold client sockets and message queue so main can communicate with listening threads and vice versa
     client_sockets = []

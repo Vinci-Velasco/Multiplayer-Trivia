@@ -4,8 +4,6 @@ import client
 
 #### Initialize data upon first connection
 def init_data(s):
-    queue = st.session_state.message_queue
-
     # parse data from client
     client.req_data_string(s, "my_id")
     client.req_data_object(s, "all_players")
@@ -51,16 +49,6 @@ def main():
             if 'my_id' not in st.session_state:
                 init_data(s)
             lobby.main()
-
-        #### Upate from Message Queue
-        # if message != None:
-        #     st.balloons()
-        #     st.write(message)
-        #     client.req_data_string(s, "my_id")
-        #     st.session_state.new_message = None
-        # else:
-        #     st.write("you have no new messages")
-        #     client.req_data_string(s, "my_id")
 
 if __name__ == '__main__':
     main()

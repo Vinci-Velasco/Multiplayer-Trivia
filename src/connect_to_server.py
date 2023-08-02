@@ -1,14 +1,13 @@
 #### Establishes socket connection to Server, initializes listening thread and message queue
-# update_queue() is run each time a new message arrives from the server
 
 import streamlit as st
 import time
 import socket
 import threading
-import pickle
 from queue import Queue
-from src.st_notifier import notify, streamlit_loop 
 from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
+
+from client import listening_thread
 
 #### Test connection by pinging the server
 def test_connect(host, port):
@@ -20,122 +19,16 @@ def test_connect(host, port):
     except ConnectionRefusedError as e:
         return e, "Could not connect to server. Check inputs and make sure server.py is running."
 
-def listening_thread(sock, message_queue, update_queue):
-    BUFFER_SIZE = 1024
-    while True:
-        try:
-            recv = sock.recv(BUFFER_SIZE) # try to receive
-            message = recv.decode("utf-8") # got to receive
-        except UnicodeDecodeError: # If decoding doesn't work, message is not a string. Try deserializing with pickle
-            message = pickle.loads(recv)
-            print(f"Received message from server with pickle: {message}")
-            message_queue.put(message)
-            update_queue()
-        else:
-            print(f"Received message from server: {message}")
-            for m in message.split("\n"):
-                if m != "":
-                    message_queue.put(m)
-            update_queue()
-
-#### Runs each time a new message arrives from the server to update the front-end
-def update_queue():
-    message_queue = st.session_state.message_queue
-    try:
-        message = message_queue.get(block=False)
-        print(message)
-    except Queue.empty:
-        print("error, queue is empty")
-    else:
-        try:
-            # parse message as string
-            parse_message_as_string(message)
-        except AttributeError:
-            # parse message with pickle
-            parse_message(message)
-
-    # Refresh app + message queue every 0.1 seconds
-    time.sleep(.1)
-    print("(streamlit refresh)")
-    streamlit_loop.call_soon_threadsafe(notify)
-
-def parse_message(message):
-    if message["header"] == "Send_Data":
-        label = message["label"]
-        data = message["data"]
-
-        if label == "my_id":
-            my_id = int(data)
-            st.session_state.my_id = my_id
-        elif label == "all_players":
-            players = {}
-            total_votes = 0
-            all_players = pickle.loads(data)
-            for p in all_players:
-                p_id = int(p.id)
-                if p_id == st.session_state.my_id:
-                    p.is_me = True
-                if p.already_voted:
-                    total_votes += 1
-
-                players[p_id] = p
-            st.session_state.players = players 
-            st.session_state.total_votes = total_votes
-
-# LEGACY, all messages coming in need to be deserialized
-def parse_message_as_string(message):
-    tokens = message.split('-')
-
-    if tokens[0] == "Send_Data":
-        label = tokens[2]
-        data = tokens[3]
-
-        if label == "my_id":
-            my_id = int(data)
-            st.session_state.my_id = my_id
-        elif label == "all_players":
-            print(data)
-            all_players = pickle.loads(data.encode("utf-8"))
-            st.session_state.all_players = all_players 
-            print(all_players)
-        elif label == "lobby_state":
-            pass
-            
-        pass
-
-#### handle current Lobby State, e.g. if we are in Voting phase or Ready Up phase...
-def update_lobby_state(lobby_state):
-    if lobby_state == "WAIT":
-        # wait until minimum amount of players are in lobby before starting the game
-        pass
-    elif lobby_state == "VOTE":
-        # change session state variables so that lobby.py shows voting
-        # send ack
-        pass
-    elif lobby_state == "HOST_FOUND":
-        # change session state variables so lobby.py shows who is the new host
-        # send ack
-        pass
-    elif lobby_state == "READY_UP":
-        st.session_state.ready_up = True
-        st.session_state.vote_over = True
-        # send ack
-        pass
-    elif lobby_state == "START_GAME":
-        # send ack
-        pass
-    
 def init_message_queue():
-    queue = Queue()
-
     # Add queue to Streamlit's session state, so it can be accessed throughout the application instance
     st.session_state.new_message = None
     st.session_state.num_messages = 0
-    st.session_state.message_queue = queue
+    st.session_state.message_queue = Queue()
 
     s = st.session_state.my_socket
+
     t = threading.Thread(
-    target=listening_thread, args=(s, queue, update_queue))
+    target=listening_thread, args=(s, st.session_state.message_queue))
 
     # Add thread to Streamlit's application context
     ctx = get_script_run_ctx()
@@ -163,7 +56,7 @@ def main():
             time.sleep(1)
 
         if connection[0] == ConnectionRefusedError:
-            st.exception(connection[1])
+            st.error(connection[1])
         elif not connection[0] == "pong":
             st.exception(connection[0])
         else:

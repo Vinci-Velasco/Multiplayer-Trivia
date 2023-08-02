@@ -34,10 +34,10 @@ def update_players():
 def find_host():
     # TODO: get host from server
     test_host = 1
-    st.session_state.host_id = 1
-    if 'vote_over' not in st.session_state:
-        st.session_state.vote_over = True
-        st.experimental_rerun()
+    # st.session_state.host_id = 1
+    # if 'vote_over' not in st.session_state:
+    #     # st.session_state.vote_over = True
+    #     st.experimental_rerun()
 
 def main():
     if 'i_voted' not in st.session_state:
