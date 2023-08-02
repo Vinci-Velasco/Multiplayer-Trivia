@@ -281,7 +281,7 @@ if __name__ == "__main__":
 
             # Send client's own Player object
             elif request == "my_player":
-                p_object = client.player_data
+                p_object = client.player_data.is_host = True
                 send_data_to_client(client, data_type, p_object)
 
 
@@ -299,6 +299,7 @@ if __name__ == "__main__":
                
                 if current_state == "FIND_HOST":
                     host = lobby_state.calculate_host(all_players)
+                    clients[host].player
 
                     send_Host_To_All_Clients(host)
 
