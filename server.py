@@ -2,8 +2,11 @@ import socket
 import threading
 import time
 import pickle
+import json
+import random
 from queue import Queue
 from src import player
+from src.question_bank import Question
 from game import lobby_state
 
 HOST = "127.0.0.1"
@@ -22,7 +25,7 @@ def listening_thread(client_socket, addr, message_queue):
     with client_socket:
         while True:
             message = client_socket.recv(BUFFER_SIZE).decode("utf8")
-            
+
             print(f"Recieved message from {addr}")
             # receive a ping
             if message == "ping":
@@ -30,7 +33,7 @@ def listening_thread(client_socket, addr, message_queue):
             else:
                 message_queue.put((message, addr))
             # client_socket.send("Server acknowledges your message\n".encode())
-         
+
 # Custom thread class that creates new threads once connections come in
 class Recieve_Connection_Thread(threading.Thread):
     def __init__(self, server, message_queue):
@@ -73,7 +76,7 @@ class Recieve_Connection_Thread(threading.Thread):
             # client_socket.send(f"Connection to server established. You're Player #{connections}\n".encode("utf8"))
 
             # for client_socket in client_sockets:
-               
+
             #     client_socket.send(str(f"Players: {client_addrs} are in the lobby!\n").encode("utf8"))
 
 
@@ -97,7 +100,7 @@ def get_all_players():
     all_players = []
     for c in clients.values():
         all_players.append(c.player_data)
-        
+
     return all_players
 
 def allPlayersReady(ready_clients):
@@ -105,17 +108,17 @@ def allPlayersReady(ready_clients):
     proceedOrNot = True
 
     for allClients in client_sockets:
-           
+
         if(ready_clients[index] == False):
 
 
             for client in client_sockets:
                 # send data to all clients
-               
+
                 #commented out until a solution for slowing down the rate of sending is found
                 #client.send(str(f"Waiting on Player {index + 1} to ready up!\n").encode("utf8"))
                 proceedOrNot = False
-               
+
         index += 1
     return proceedOrNot
 
@@ -127,7 +130,7 @@ def send_data_to_client(client, data_type, data):
         print(f"SEND {data} string to Client {client.id}: {data}")
         client.socket.send(str(data).encode('utf8'))
 
-    # Serialize Object before sending            
+    # Serialize Object before sending
     elif data_type == "Object":
         print(f"SEND {data} object to Client {client.id}: {data}")
         data_object = pickle.dumps(data)
@@ -151,6 +154,24 @@ def voteHost():
     pass
 
 
+# Sends question from question bank to all clients
+def send_question(question_bank):
+    # select rand question
+    num_of_questions = len(question_bank["questions"])
+    rand_num = random.randint(0, num_of_questions-1)
+    selected_question = question_bank["questions"][rand_num]
+
+    question_obj = Question(selected_question["id"], selected_question["question"], selected_question["answer"])
+
+    # serialize and send
+    global clients
+    for client_id in clients:
+        send_data_to_client(clients[client_id], "Object", question_obj)
+
+    # avoid repeat questions
+    question_bank["questions"].remove(selected_question)
+
+
 def answer():
     pass
 
@@ -160,6 +181,15 @@ def buzzing():
 
 
 #Token functions-------------------------------------------------------------------------------------
+
+#Helper functions------------------------------------------------------------------------------------
+
+# loads questions from JSON file and returns a dict
+def load_question_bank():
+    with open("./src/test_questions.json", "r") as file:
+        return json.load(file)
+
+#Helper functions------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     # setup server socket
@@ -173,6 +203,7 @@ if __name__ == "__main__":
     client_addrs = []
     PlayerNumber = {}
 
+    question_bank = load_question_bank()
 
     ready_clients = [False, False, False, False, False]
     message_queue = Queue() # locks are already built in to Queue class
@@ -184,7 +215,7 @@ if __name__ == "__main__":
     all_ready = False
     while not (all_ready and host_found):
         #gets the message and its coresponding sender adderess
-        message, addr = message_queue.get()    
+        message, addr = message_queue.get()
         print(message)
 
         #### Information about the Sender
@@ -233,7 +264,7 @@ if __name__ == "__main__":
                 all_players = get_all_players()
                 last_state = current_state
                 current_state = lobby_state.get_state(all_players, last_state)
-                
+
                 if current_state == "FIND_HOST":
                     host = lobby_state.calculate_host(all_players)
                     # TODO: send host to all clients, wait for ACK from all clients
@@ -244,7 +275,7 @@ if __name__ == "__main__":
                     pass
 
                 send_data_to_client(client, data_type, current_state)
-                    
+
 
         elif (tokens[0] == "Vote_Host"):
             vote_id = int(tokens[1])
@@ -253,7 +284,7 @@ if __name__ == "__main__":
 
 
         # TODO: when all players have finished voting, calculate final Host_choice and send to client
-        # then set Player(Host_Choice).isHost = True  
+        # then set Player(Host_Choice).isHost = True
 
 
         elif (tokens[0] == "Ready_Up"):
@@ -262,28 +293,34 @@ if __name__ == "__main__":
         elif (tokens[0] == "ACK"):
             data = tokens[1]
             print_ACK(client, data)
-           
+
     #Token Parse------------------------------------------------------------------
 
 
         all_ready = allPlayersReady(ready_clients)
         # If all players are ready move on to the main game loop
         if all_ready == True:
- 
+
             break
 
-    # close ability to connect
+    # # close ability to connect
     recieve_connections_thread.stop()
     recieve_connections_thread.join()
 
 
-    # send info to clients that main game has started
-    # ...
+    # # send info to clients that main game has started
+    # # ...
 
 
     # main game loop
     game_loop = True
     while game_loop:
+
+        # no more questions left
+        if len(question_bank == 0):
+            break
+
+        send_question(question_bank)
         message, addr = message_queue.get()
         print(message)
 
