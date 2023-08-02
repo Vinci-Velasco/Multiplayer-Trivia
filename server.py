@@ -128,7 +128,7 @@ def allPlayersReady(ready_clients):
 #Token functions------USE if needed-------------------------------------------------------------------------------
 def send_data_to_client(client, data_type, data):
     # if client disconnected, don't do anything
-    if not client.socket.fileno() == -1:
+    if client.socket.fileno() == -1:
         return
     
     # Encode String before sending
