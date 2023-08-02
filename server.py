@@ -159,11 +159,14 @@ def try_to_grab_buzz_lock(sender_id):
 
     for p in all_players:
 
+        #if anyone else has the lock DO NOT GIVE THE CALLING SENDER THE LOCK
         if(p.has_lock == True and p.id != clients[sender_id].player_data.id):
             return False
         
+    clients[sender_id].player_data.has_lock = True
+        
     
-        clients[sender_id].player_data.has_lock = True
+        
         
 
 
@@ -281,7 +284,7 @@ if __name__ == "__main__":
 
             # Send client's own Player object
             elif request == "my_player":
-                p_object = client.player_data.is_host = True
+                p_object = client.player_data
                 send_data_to_client(client, data_type, p_object)
 
 
@@ -299,7 +302,8 @@ if __name__ == "__main__":
                
                 if current_state == "FIND_HOST":
                     host = lobby_state.calculate_host(all_players)
-                    clients[host].player
+
+                    clients[host.id].player_data.is_host = True
 
                     send_Host_To_All_Clients(host)
 
@@ -307,7 +311,6 @@ if __name__ == "__main__":
                 elif current_state == "START_GAME":
                    
                     send_Start_Game_To_All_Clients()
-
 
                     #if you send both of these together then the messages are received as one
                     #send_data_to_client(client, data_type, current_state)
@@ -394,7 +397,9 @@ if __name__ == "__main__":
 
             if request == "game_state":
                 all_players = get_all_players()
-                print("---------------------\n")
+
+                #PRINTING FOR TESTING - REMOVE IF NEEDED
+                print("------Who HAS the lock (for testing)---------------\n")
                 print((f"#1: {all_players[0].has_lock}\n"))
                 print((f"#2: {all_players[1].has_lock}\n"))
                 print((f"#3: {all_players[2].has_lock}\n"))
@@ -408,16 +413,19 @@ if __name__ == "__main__":
                     #TODO: Send latest question to all clients
 
                 elif current_state == "WAITING_FOR_BUZZ":
-
+                    
+                    #this sets everyone's recieved_question variable back to false
                     clear_received_question()
 
 
                 elif current_state == "WAITING_FOR_ANSWER":
                     
-                    #remove this when this gets filled out 
+                    #remove this when timer stuff gets added
                     current_state = "GOT_ANSWER"
+                    #-----------------------------------
                     #TODO: start timer thread to time player who buzzed in
                     
+                    #how i envisioned the timer stuff (remove if needed)
                     #if(timer runs out):
                         #current_state = "WAITING_FOR_BUZZ"
                         #answer_came = False
@@ -428,6 +436,7 @@ if __name__ == "__main__":
 
                 elif current_state == "WAITING_FOR_HOSTS_CHOICE":
                     
+                    #host_voted gets updated when a host_vote token is parsed 
                     if(host_voted == False):
                         current_state = "WAITING_FOR_HOSTS_CHOICE"
                     else:
@@ -436,6 +445,7 @@ if __name__ == "__main__":
 
                 elif current_state == "GOT_HOST_CHOICE":
 
+                    #give_player_point variable is changed by the host_choice function which Tony is working on
                     if(give_player_point == False):
                         give_player_point = False
                         host_voted = False
@@ -443,18 +453,28 @@ if __name__ == "__main__":
 
                         index = 1
 
+                        #goes through all players and takes away lock from player who buzzed without giving them a point
+                        #because host said their answer was wrong 
                         for p in all_players:
                      
                             if clients[index].player_data.has_lock == True:
-                                clients[index].player_data.has_lock == False
+                                clients[index].player_data.has_lock = False
 
                             index += 1
 
-                        #current_state = "WAITING_FOR_BUZZ"
+
+                        current_state = "WAITING_FOR_BUZZ"
+
+                        print("------AFTER THE HOST HAS CHOSEN (should all be false)---------------\n")
+                        print((f"#1: {all_players[0].has_lock}\n"))
+                        print((f"#2: {all_players[1].has_lock}\n"))
+                        print((f"#3: {all_players[2].has_lock}\n"))
+                        print("=====================\n")
                        
                     else:
 
                         inex = 1
+                        #goes through all players and takes away lock from player who buzzed but also give them a point
                         for p in all_players:
 
                             if clients[index].player_data.has_lock == True:
@@ -465,7 +485,12 @@ if __name__ == "__main__":
                                 clients[index].player_data.increaseScore()
                             index += 1
 
+                        #once a player gets the question right the server moves on to sending the next question
                         current_state = "SENDING_QUESTION"
+
+                        #if someone has more than 5 points the the game ends
+                        if(game_state.has_someone_won(all_players)):
+                            current_state = "GAME_OVER"
 
                 elif current_state == "GAME_OVER":
                     pass
@@ -492,7 +517,7 @@ if __name__ == "__main__":
            
            host_voted = True
            #TODO:call/create the hostChoice funciton which actually asks the host if the answer is right or wrong
-           #the hostChoice function should return true or false which gets sotred into give_player_point
+           #the hostChoice function should return true or false which gets stored into give_player_point
            #ie. give_player_point = hostChoice()
            pass
 

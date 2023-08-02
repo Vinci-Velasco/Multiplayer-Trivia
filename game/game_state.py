@@ -26,10 +26,6 @@ def get_state(players, last_state):
     #Server waits until a token is parsed which is a buzz
     elif last_state == "WAITING_FOR_BUZZ":
 
-        #test = did_somone_buzz(players)
-
-        #print(f"test-----------------------sfsfsf: {test}")
-
 
         if(did_somone_buzz(players) == True):
             return "SOMEONE_BUZZED"
@@ -60,8 +56,6 @@ def get_state(players, last_state):
     #server should give a player a point if they got the answer correct (not sure if we move on to a different question if client is wrong)
     elif last_state == "GOT_HOST_CHOICE":
 
-        if(has_someone_won(players)):
-            return "GAME_OVER"
         
         return "GOT_HOST_CHOICE"
 

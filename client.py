@@ -80,7 +80,7 @@ def ready_up_test():
        
             #on 5th loop client can choose to ready up (only here for testing change as needed)
             if(index == 2):
-                userTestInput = input("Who would you like to vote for? (player #): ")
+                userTestInput = input("Who would you like to vote for? (#): ")
 
 
                
