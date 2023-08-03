@@ -5,6 +5,12 @@ import streamlit as st
 from queue import Empty
 from src.st_notifier import notify, streamlit_loop 
 
+class Client():
+    def __init__(self, id, socket, addr, player):
+        self.id = id
+        self.socket = socket
+        self.addr = addr
+        self.player_data = player # use Player class from src/player.py
 
 def listening_thread(sock, message_queue):
     BUFFER_SIZE = 1024
