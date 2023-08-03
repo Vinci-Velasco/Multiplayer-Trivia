@@ -32,7 +32,6 @@ def update_queue(message_queue):
     try:
         message = message_queue.get(block=False)
     except Empty as e:
-        server_disconnect()
         raise Exception('error, queue is empty. did server disconnect?') from e
     else:
         try:
@@ -59,20 +58,41 @@ def parse_message(message):
         if label == "my_id":
             my_id = int(data)
             st.session_state.my_id = my_id
+
+            if 'players' in st.session_state:
+                players = st.session_state.players 
+                if len(players) >= my_id:
+                    my_player = players[my_id]
+                    my_player.is_me = True
+                    st.session_state.my_player = my_player
+
         elif label == "all_players":
             players = {}
             total_votes = 0
+            total_ready = 0 
             all_players = pickle.loads(data)
             for p in all_players:
                 p_id = int(p.id)
-                if p_id == st.session_state.my_id:
+                my_id = st.session_state.my_id
+
+                if p_id == my_id:
                     p.is_me = True
+                    st.session_state.my_player = p
+                
                 if p.already_voted:
                     total_votes += 1
+                
+                if p.readied_up:
+                    total_ready += 1
 
                 players[p_id] = p
             st.session_state.players = players 
             st.session_state.total_votes = total_votes
+
+    elif message['header'] == "Disconnect":
+        p_id = int(message['data'])
+        players = st.session_state.players
+        players[p_id].disconnected = True 
 
 # LEGACY, all messages coming in need to be deserialized
 def parse_message_as_string(message):
@@ -85,13 +105,6 @@ def parse_message_as_string(message):
         if label == "my_id":
             my_id = int(data)
             st.session_state.my_id = my_id
-        elif label == "all_players":
-            all_players = pickle.loads(data.encode("utf-8"))
-            st.session_state.all_players = all_players 
-        elif label == "lobby_state":
-            pass
-            
-        pass
 
 #### handle current Lobby State, e.g. if we are in Voting phase or Ready Up phase...
 def update_lobby_state(lobby_state):
@@ -116,9 +129,10 @@ def update_lobby_state(lobby_state):
         pass
 
 #### Data Strings need to be decoded with utf8
-# Deprecated
 def req_data_string(s, string):
-    s.send(f"Req_Data-String-{string}\n".encode('utf8'))
+    message = f"Req_Data-String-{string}\n" 
+    print(f"...sending message to server: {message}")
+    s.send(message.encode('utf8'))
 
 #### Data Objects need to be serialized/deserialized with pickle
 # Deprecated

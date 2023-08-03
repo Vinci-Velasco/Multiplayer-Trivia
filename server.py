@@ -107,6 +107,11 @@ def disconnect_client(client_socket):
         # del clients[target.id]
         target.player_data.disconnected = True
         client_socket.close()
+
+        if len(clients) >= 1:
+            # notify remaining clients of disconnect
+            send_message_to_all("Disconnect", "player_id", client.id)
+
         print(f"...closing inactive listening thread for client {client.id}")
 
 # Returns a list of all Player data from all connected clients

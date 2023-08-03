@@ -22,7 +22,7 @@ def draw_lobby(cols, players, vote_callback, ready_callback, find_host):
         else:
             cols[1].write(f"Player {p.id}")
 
-        if p.disconnected:
+        if p.disconnected == True:
             cols[2].write("Disconnected")
         elif p.already_voted == False:
             cols[2].write("Voting...")
