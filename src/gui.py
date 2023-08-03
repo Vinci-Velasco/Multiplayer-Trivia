@@ -2,7 +2,7 @@ import streamlit as st
 #### Draw UI components
 # Called on each page update
 
-def draw_lobby(cols, players, vote_callback, ready_callback, find_host):
+def draw_lobby(cols, players, vote_callback, ready_callback):
     st.title('Lobby')
     c1, c2, c3, c4 = st.columns(4, gap="large")        
     cols = { 1: c1, 2: c2, 3: c3, 4: c4 }
@@ -41,7 +41,9 @@ def draw_lobby(cols, players, vote_callback, ready_callback, find_host):
         if (total_votes <= nplayers):
             cols[4].write(f"Votes: {total_votes}/{nplayers}")
         else:
-            find_host()
+            # TODO: vote is over, lets find the host
+            pass
+            
     else: ## Begin Ready Up phase after Vote Over
         nplayers = len(players)
         total_ready = st.session_state.total_ready

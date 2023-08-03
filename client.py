@@ -55,7 +55,12 @@ def server_disconnect():
 def req_data_from_server(s, request):
     message = f"Req_Data-String-{request}\n" 
     print(f"...sending message to server: {message}")
-    s.send(message.encode('utf8'))
+    s.sendall(message.encode('utf8'))
+
+def send_data_to_server(s, header, data):
+    message = f"{header}-{data}\n"
+    print(f"...sending message to server: {message}\n")
+    s.sendall(message.encode('utf8'))
 
 #### Parse incoming messages in queue
 def parse_message(message):
@@ -70,6 +75,15 @@ def parse_message(message):
 
         if 'players' in st.session_state:
             client_messages.update_player(update, player_data)
+    
+    elif message['header'] == "State_Update":
+        label = message['label']
+        state_data = message['data']
+
+        if label == "Lobby" and 'lobby_start' in st.session_state:
+            client_messages.update_lobby_state(state_data)
+        elif label == "Game" and 'game_start' in st.session_state:
+            client_messages.update_game_state(state_data)
 
 #### Data Strings need to be decoded with utf8
 def req_data_string(s, string):
