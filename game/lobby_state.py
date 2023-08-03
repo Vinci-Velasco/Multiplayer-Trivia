@@ -60,9 +60,7 @@ def get_state(players, last_state):
 def calculate_host(players):
     host = None
 
-
     for p in players:
-
 
         if(host == None):
             host = p
@@ -71,7 +69,6 @@ def calculate_host(players):
             host = p
         # If there's a tie, pick betewen them randomly
         elif p.votes == host.votes:
-
 
             tempList = []
             tempList.append(p)

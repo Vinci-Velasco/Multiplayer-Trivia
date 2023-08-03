@@ -91,9 +91,9 @@ def did_somone_buzz(players):
 
 def has_someone_won(players):
 
-    #If a player gets 10 questions right the game ends (can change number as needed)
+    #If a player gets 3 questions right the game ends (can change number as needed)
     for p in players:
-        if p.score >= 10:
+        if p.score >= 3:
             return True
         
     return False

@@ -509,7 +509,7 @@ if __name__ == "__main__":
                        
                     else:
 
-                        inex = 1
+                        index = 1
                         #goes through all players and takes away lock from player who buzzed but also give them a point
                         for p in all_players:
 
@@ -551,11 +551,16 @@ if __name__ == "__main__":
 
         elif (tokens[0] == "Host_Choice"):
            
-           host_voted = True
+            host_voted = True
+
+            if(tokens[1] == "Y"):
+               give_player_point = True
+            else:
+               give_player_point = False
            #TODO:call/create the hostChoice funciton which actually asks the host if the answer is right or wrong
            #the hostChoice function should return true or false which gets stored into give_player_point
            #ie. give_player_point = hostChoice()
-           pass
+       
 
         elif (tokens[0] == "Answer"):
 
