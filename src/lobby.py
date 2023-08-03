@@ -24,7 +24,6 @@ def init(s):
         else:
             st.session_state.i_voted = False
             st.session_state.im_ready = False
-            st.session_state.host_id = None
             st.session_state.lobby_start = True
 
 def vote_callback(id):
@@ -48,7 +47,9 @@ def main():
         init(st.session_state.my_socket)
     else:
         players = st.session_state.players
-        st.session_state.i_voted = st.session_state.my_player.already_voted
+
+        if not st.session_state.i_voted:
+            st.session_state.i_voted = st.session_state.my_player.already_voted
 
         ## Draw GUI
         global cols

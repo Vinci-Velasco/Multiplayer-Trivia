@@ -6,7 +6,7 @@ from src import player
 from game import lobby_state
 
 HOST = "127.0.0.1"
-PORT = 7071
+PORT = 7070
 
 clients = {} # key: id - value: Client 
 
@@ -17,16 +17,15 @@ def listening_thread(client_socket, addr, message_queue):
     with client_socket:
         while True:
             try:
-                message = client_socket.recv(BUFFER_SIZE).decode("utf8")
-            except ConnectionResetError as e:
+                recv = client_socket.recv(BUFFER_SIZE)
+                if not recv: # terminate thread if socket is inactive
+                    disconnect_client(client_socket)
+                    break
+                message = recv.decode("utf8")
+            except ConnectionResetError:
                 disconnect_client(client_socket)
                 break
             else:
-                # terminate listening thread when client socket is inactive
-                if not message:
-                    disconnect_client(client_socket)
-                    break
-            
                 # receive a ping
                 if message == "ping":
                     print("....got ping, sent pong")
