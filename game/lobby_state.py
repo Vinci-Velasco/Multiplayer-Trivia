@@ -22,7 +22,6 @@ def get_state(players, last_state):
         return "WAIT"
     elif(nplayers >= MIN_PLAYERS and last_state == "WAIT"):
 
-
         return "VOTE"
 
     elif last_state == "VOTE":
@@ -30,8 +29,10 @@ def get_state(players, last_state):
         total_votes = get_total_votes(players)
 
         if total_votes < nplayers:
+        
             return "VOTE"
         else: # After all players have voted, next state is to choose the host
+     
             return "FIND_HOST"
 
     elif last_state == "FIND_HOST":

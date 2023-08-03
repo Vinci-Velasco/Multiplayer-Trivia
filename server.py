@@ -15,6 +15,7 @@ PORT = 7070
 
 clients = {} # key: id - value: Client 
 
+
 # Thread that deals with listening to clients
 def listening_thread(client_socket, addr, message_queue):
     BUFFER_SIZE = 1024 # change size when needed
@@ -255,6 +256,9 @@ def send_message_to_all(header, label, data, except_id=-1):
 
     for c in clients.values():
         if c.id != except_id and c.player_data.disconnected == False:
+            print("test: ")
+            print(c.player_data.id)
+            print(" \n")
             c.socket.sendall(pickle.dumps(message))
             if sent == False:
                 sent == True
@@ -276,7 +280,7 @@ def send_player_update_to_all(update, player_data, serialize=False):
     send_message_to_all(header, label, data)
 
 #### Handle requests for server data, send back a response containing the requested data
-def parse_data_req(client, request, send_to_all=False):
+def parse_data_req(client, current_state, request, send_to_all=False):
     data = None
     serialize = False
 
@@ -300,6 +304,7 @@ def parse_data_req(client, request, send_to_all=False):
                 host = lobby_state.calculate_host(all_players)
                 clients[host.id].player_data.is_host = True
                 current_state = "HOST_FOUND"
+                print("aklfja;slkfj;asklfj;aslkjf;laskfj;askljf;sklajf;klasjf;klja00\n")
                 send_Host_To_All_Clients(host)
             elif current_state == "START_GAME":
                 send_Start_Game_To_All_Clients()
@@ -308,6 +313,7 @@ def parse_data_req(client, request, send_to_all=False):
                 #send_data_to_client(client, data_type, current_state)
 
             data = current_state
+          
     
     # Serialize data if needed
     if serialize == True:
@@ -318,8 +324,11 @@ def parse_data_req(client, request, send_to_all=False):
     else:
         send_message_to_client(client, "Send_Data", request, data)
 
+    return current_state
+
 def send_Host_To_All_Clients(host):
-    send_message_to_all(f"Send_Data-host_id-{host.id}")
+
+    send_message_to_all("Send_Data", "host_id", host.id)
 
 def send_Start_Game_To_All_Clients():
     # TODO: change this to proper client message format eventually, i'm assuming this is for testing tho so i wont touch it
@@ -409,6 +418,7 @@ if __name__ == "__main__":
     all_ready = False
     #### Internal Lobby states and values
     host = None
+    current_state = "WAIT"
     while not (all_ready and host_found):
         #gets the message and its coresponding sender adderess
         message, addr = message_queue.get()
@@ -426,7 +436,7 @@ if __name__ == "__main__":
         if (tokens[0] == "Req_Data"):
             data_type = tokens[1]
             request = tokens[2]
-            parse_data_req(client, request)
+            current_state = parse_data_req(client, current_state, request)
 
         elif (tokens[0] == "Vote_Host"):
             vote_id = int(tokens[1])
@@ -434,6 +444,9 @@ if __name__ == "__main__":
 
         elif (tokens[0] == "Ready_Up"):
             clients[sender_id].player_data.readied_up = True
+
+        if(current_state == "START_GAME"):
+            break
 
     #Token Parse------------------------------------------------------------------
 
@@ -495,7 +508,7 @@ if __name__ == "__main__":
             request = tokens[2]
 
             if request != "game_state":
-                parse_data_req(client, request)
+                parse_data_req(client, current_state, request)
             # TODO: separate game_state parser after testing is done
             else:
                 all_players = get_all_players()

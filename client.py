@@ -3,7 +3,7 @@ import time
 import pickle
 import streamlit as st
 from queue import Empty
-from src.st_notifier import notify, streamlit_loop 
+"""from src.st_notifier import notify, streamlit_loop 
 from src import client_messages
 
 
@@ -75,7 +75,7 @@ def parse_message(message):
 def req_data_string(s, string):
     message = f"Req_Data-String-{string}\n" 
     print(f"...sending message to server: {message}")
-    s.send(message.encode('utf8'))
+    s.send(message.encode('utf8')) """
 
 def ready_up_test():
     HOST = "127.0.0.1"
@@ -86,29 +86,56 @@ def ready_up_test():
         my_id = 0
         host_id = 0
 
-        my_socket.send("Req_Data-String-my_id".encode("utf8"))
-        my_id = my_socket.recv(BUFFER_SIZE).decode("utf8")
+        #my_socket.send("Req_Data-String-my_id".encode("utf8"))
+        #my_id = my_socket.recv(BUFFER_SIZE).decode("utf8")
 
-        print(f"You are player: {my_id}")
+
+        #print(f"You are player: {my_id}")
 
 
         index = 0
+        my_socket.send("Req_Data-String-my_id".encode("utf8"))
+
         while True:
             time.sleep(3)
-            my_socket.send("Req_Data-String-lobby_state".encode("utf8"))
+          
+            isString = False
    
-            data = my_socket.recv(BUFFER_SIZE).decode("utf8")
-            print(f"Recived: {data}")
+            try: 
+                recv = my_socket.recv(BUFFER_SIZE)
+                message = recv.decode("utf-8")
 
-            tokens = data.split('-')
+            except UnicodeDecodeError: # If decoding doesn't work, message is not a string. Deserialize with pickle
+                message = pickle.loads(recv)
+                to_console = "{ header: " + message['header'] + ", label: " + message['label'] + ", data: " + str(message['data'])[:10] + "... }"
+                print(f"Received message from server: {to_console}\n")
+            else:
+                  print(f"Received a string from server: {message}\n")
+                  tokens = message.split('-')
+                  isString = True
 
-            if(tokens[0] == "READY_UPStart_Game" or tokens[0] == "Start_Game"):
-                break
 
-            if(tokens[0] == "Host_Number"):
+            my_socket.send("Req_Data-String-lobby_state".encode("utf8"))
+      
+            if(isString == False):
+           
+                if(str(message['data'])[:10] == "READY_UPStart_Game" or str(message['data'])[:10] == "Start_Game"):
+                    break
+                elif((str(message['label'])[:10] == "my_id")):
 
-                host_id = tokens[1]
+                    my_id = str(message['data'])[:10]
 
+                    print("My id is: ")
+                    print(str(message['data'])[:10])
+                    print("\n")
+                
+                elif(str(message['label'])[:10] == "host_id"):
+                     
+                     host_id = str(message['data'])[:10]
+                     print("host: ")
+                     print(host_id)
+                     print("\n")
+            
             #on 5th loop client can choose to ready up (only here for testing change as needed)
             if(index == 2):
                 userTestInput = input("Who would you like to vote for? (#): ")
@@ -125,7 +152,7 @@ def ready_up_test():
 
             index += 1
 
-        while True:
+    """    while True:
 
 
             time.sleep(3)
@@ -159,7 +186,7 @@ def ready_up_test():
                     if(userTestInput == "y"):
                         my_socket.send("Host_Choice-Y".encode("utf8"))
                     else:
-                        my_socket.send("Host_Choice-N".encode("utf8"))
+                        my_socket.send("Host_Choice-N".encode("utf8")) """
 
 if __name__ == '__main__':
     ready_up_test()
