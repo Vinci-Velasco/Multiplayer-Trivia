@@ -1,43 +1,46 @@
 import socket
 import threading
-import time
 import pickle
 import json
 import random
 from queue import Queue
+
 from src import player
 from src.question_bank import Question
-from game import lobby_state
-from game import game_state
-
+from game import lobby_state, game_state
 
 HOST = "127.0.0.1"
 PORT = 7070
 
-NUM_PLAYERS = 5
-
-min_players = 3
-max_players = 5
-
-clients = {}
+clients = {} # key: id - value: Client 
 
 # Thread that deals with listening to clients
 def listening_thread(client_socket, addr, message_queue):
     BUFFER_SIZE = 1024 # change size when needed
+
     with client_socket:
         while True:
-            message = client_socket.recv(BUFFER_SIZE).decode("utf8")
-
-            print(f"Recieved message from {addr}")
-            # receive a ping
-            if message == "ping":
-                    client_socket.send("pong".encode('utf-8'))
+            try:
+                recv = client_socket.recv(BUFFER_SIZE)
+                if not recv: # terminate thread if socket is inactive
+                    disconnect_client(client_socket)
+                    break
+                message = recv.decode("utf8")
+            except ConnectionResetError:
+                disconnect_client(client_socket)
+                break
             else:
-                message_queue.put((message, addr))
-
-                #client_socket.send("Server acknowledges your message\n".encode())
+                # receive a ping
+                if message == "ping":
+                    print("....got ping, sent pong")
+                    client_socket.send("pong".encode('utf-8'))
+                # add message to message queue
+                else:
+                    for m in message.split("\n"):
+                        if m != "":
+                            message_queue.put((m, addr))
+                    print(f"Recieved message from {addr}: {message}\n")
          
-
 # Custom thread class that creates new threads once connections come in
 class Recieve_Connection_Thread(threading.Thread):
     def __init__(self, server, message_queue):
@@ -53,16 +56,13 @@ class Recieve_Connection_Thread(threading.Thread):
         connections = 0
         MAX_CONNECTIONS = 5
 
-
         while connections < MAX_CONNECTIONS:
             print(f"Listening for connections ({connections}/{MAX_CONNECTIONS})...")
             client_socket, addr = self.server.accept()
 
-
             # terminate thread if stop_connections set to True
             if self.stop_connections:
                 break
-
 
             # otherwise create new thread for connection
             client_sockets.append(client_socket)
@@ -72,8 +72,7 @@ class Recieve_Connection_Thread(threading.Thread):
             thread.start()
             connections += 1
 
-
-           # Create a new Client and associated Player object, add to global dict
+           # Create a new Client and associated Player, add to global dict
             global clients
             client_id = connections
             p = player.Player(client_id)
@@ -82,10 +81,8 @@ class Recieve_Connection_Thread(threading.Thread):
 
             PlayerNumber[addr] =  client_id, client_socket
 
-            # client_socket.send(f"Connection to server established. You're Player #{connections}\n".encode("utf8"))
-            # for client_socket in client_sockets:
-
-            #     client_socket.send(str(f"Players: {client_addrs} are in the lobby!\n").encode("utf8"))
+            # Notify all clients about the new connection (except this one)
+            send_message_to_all("Player_Update", "Connect", pickle.dumps(p), except_id=client_id)
 
         print(f"Done with connections ({connections}/{MAX_CONNECTIONS})")
 
@@ -103,7 +100,27 @@ class Client():
         self.addr = addr
         self.player_data = player # use Player class from src/player.py
 
+def disconnect_client(client_socket):
+    target = None
+    for c in clients.values():
+        if c.socket == client_socket:
+            target = c
+            break
+    
+    if target != None:
+        # client_sockets.remove(client_socket)
+        # client_addrs.remove(target.addr)
+        # del PlayerNumber[target.addr]
+        # del clients[target.id]
+        target.player_data.disconnected = True
+        client_socket.close()
 
+        # notify remaining clients of disconnected client
+        send_player_update_to_all("Disconnect", target.id)
+
+        print(f"...closing inactive listening thread for client {target.id}")
+
+# Returns a list of Players from all connected clients
 def get_all_players():
     all_players = []
     for c in clients.values():
@@ -146,7 +163,6 @@ def allPlayersReady(ready_clients):
     return proceedOrNot
 
 def received_question_confirmation(sender_id):
-
     clients[sender_id].player_data.received_question = True
    
 
@@ -170,44 +186,120 @@ def try_to_grab_buzz_lock(sender_id):
             return False
         
     clients[sender_id].player_data.has_lock = True
-        
-    
-        
-        
 
+#### Send/Parse Messages ------------------------------------------
 
-
-#Token functions------USE if needed-------------------------------------------------------------------------------
+## Automatically format data before sending based on data_type
+# TODO: LEGACY, needs to be redone
 def send_data_to_client(client, data_type, data):
+    # if client disconnected, don't do anything
+    if client.socket.fileno() == -1:
+        return
+    
     # Encode String before sending
     if data_type == "String":
-        print(f"SEND {data} string to Client {client.id}: {data}")
+        print(f"....sending string to Client {client.id}: {data}")
         client.socket.send(str(data).encode('utf8'))
 
     elif data_type == "Object":
-        print(f"SEND {data} object to Client {client.id}: {data}")
+        print(f"....sending Object to Client {client.id}: {data}")
         data_object = pickle.dumps(data)
         client.socket.send(data_object)
 
+#### Send message to client with header and label that describes the data
+def send_message_to_client(client, header, label, data):
+    message = {"header": header, "label": label, "data": data}
+    client.socket.sendall(pickle.dumps(message))
+
+    to_console = str(data)[:10] + "..."
+    print(f"....sending message to Client {client.id}:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
+
+
+#### Send message to all clients except except_id
+def send_message_to_all(header, label, data, except_id=-1):
+    message = {"header": header, "label":label, "data":data}
+    sent = False
+
+    for c in clients.values():
+        if c.id != except_id and c.player_data.disconnected == False:
+            c.socket.sendall(pickle.dumps(message))
+            if sent == False:
+                sent == True
+
+    if sent:
+        to_console = str(data)[:10] + "..."
+        print("....sending message to all clients:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
+
+#### Send an update to all clients about a specific Player
+def send_player_update_to_all(update, player_data, serialize=False):
+    header = "Player_Update"
+    label = update # e.g. Connect, Disconnect
+
+    if serialize == True:
+        data = pickle.dumps(player_data)
+    else:
+        data = player_data
+
+    send_message_to_all(header, label, data)
+
+#### Handle requests for server data, send back a response containing the requested data
+def parse_data_req(client, request, send_to_all=False):
+    data = None
+    serialize = False
+
+    if request == "my_id":
+        data = client.id
+
+    elif request == "players_in_lobby":
+        data = get_all_players()
+        serialize = True
+
+    elif request == "my_player":
+        data = client.player_data
+        serialize = True
+
+    elif request == "lobby_state":
+            all_players = get_all_players()
+            last_state = current_state
+            current_state = lobby_state.get_state(all_players, last_state)
+            
+            if current_state == "FIND_HOST":
+                host = lobby_state.calculate_host(all_players)
+                clients[host.id].player_data.is_host = True
+                current_state = "HOST_FOUND"
+                send_Host_To_All_Clients(host)
+            elif current_state == "START_GAME":
+                send_Start_Game_To_All_Clients()
+
+                #if you send both of these together then the messages are received as one
+                #send_data_to_client(client, data_type, current_state)
+
+            data = current_state
+    
+    # Serialize data if needed
+    if serialize == True:
+        data = pickle.dumps(data)
+    
+    if send_to_all == True: 
+        send_message_to_all("Send_Data", request, data) 
+    else:
+        send_message_to_client(client, "Send_Data", request, data)
 
 def send_Host_To_All_Clients(host):
-
-    for client in clients.values():
-        client.socket.send(f"Host_Number-{host.id}".encode('utf8'))
-
+    send_message_to_all(f"Send_Data-host_id-{host.id}")
 
 def send_Start_Game_To_All_Clients():
-
     for client in clients.values():
         client.socket.send(f"Start_Game-NA".encode('utf8'))
 
-
-def print_ACK(player, ACK):
-    print(f"Received ACK from Player {player.id}: {ACK}")
-
-
 def hostChoice():
     pass
+
+def add_host_vote(client, vote_id):
+    clients[vote_id].player_data.votes += 1
+    clients[client.id].player_data.already_voted = True
+    # update all clients that this client has voted
+    send_player_update_to_all("Already_Voted", client.id)
 
 def voteHost():
     pass
@@ -258,8 +350,8 @@ if __name__ == "__main__":
     client_sockets = []
     client_addrs = []
     PlayerNumber = {}
-
     question_bank = load_question_bank()
+
 
     ready_clients = [False, False, False, False, False]
     message_queue = Queue() # locks are already built in to Queue class
@@ -270,101 +362,33 @@ if __name__ == "__main__":
     #### Lobby loop ------------------------------------------------------------------
     host_found = False
     all_ready = False
-    current_state = "WAIT"
+    #### Internal Lobby states and values
     host = None
     while not (all_ready and host_found):
         #gets the message and its coresponding sender adderess
         message, addr = message_queue.get()
-        print(message)
-
 
         #### Information about the Sender
         sender_id = PlayerNumber[addr][0]
         client = clients[sender_id]
 
-
         #### Internal Lobby states and values
         total_votes = 0
-
 
         #### application layer protocol for lobby (Parse Tokens)
         tokens = message.split('-')
 
-
-        #### Handle Requests for Data from Sender
         if (tokens[0] == "Req_Data"):
             data_type = tokens[1]
             request = tokens[2]
-
-
-            # Send client's own Player ID
-            if request == "my_id":
-                send_data_to_client(client, data_type, sender_id)
-
-
-            # Send List of online Player IDs
-            elif request == "player_id_list":
-                player_id_list = []
-                for c in clients.values():
-                    player_id_list.append(c.id)
-                send_data_to_client(client, data_type, player_id_list)
-
-
-            elif request == "all_players_list":
-                all_players = get_all_players()
-                send_data_to_client(client, data_type, all_players)
-
-
-            # Send client's own Player object
-            elif request == "my_player":
-                p_object = client.player_data
-                send_data_to_client(client, data_type, p_object)
-
-
-            # elif request == "total_votes":
-            #     all_players = get_all_players()
-            #     total_votes = lobby_state.get_total_votes(all_players)
-            #     send_data_to_client(client, data_type, total_votes)
-
-
-            if request == "lobby_state":
-                all_players = get_all_players()
-                last_state = current_state
-                current_state = lobby_state.get_state(all_players, last_state)
-                if current_state == "FIND_HOST":
-                    host = lobby_state.calculate_host(all_players)
-
-                    clients[host.id].player_data.is_host = True
-
-                    send_Host_To_All_Clients(host)
-
-                    current_state = "HOST_FOUND"
-                elif current_state == "START_GAME":
-                   
-                    send_Start_Game_To_All_Clients()
-
-                    #if you send both of these together then the messages are received as one
-                    #send_data_to_client(client, data_type, current_state)
-                    break
-                   
-                send_data_to_client(client, data_type, current_state)
-
+            parse_data_req(client, request)
 
         elif (tokens[0] == "Vote_Host"):
             vote_id = int(tokens[1])
-            clients[vote_id].player_data.votes += 1
-            clients[sender_id].player_data.already_voted = True
-
-        # TODO: when all players have finished voting, calculate final Host_choice and send to client
-        # then set Player(Host_Choice).isHost = True
+            add_host_vote(client, vote_id)
 
         elif (tokens[0] == "Ready_Up"):
-           
             clients[sender_id].player_data.readied_up = True
-       
-        elif (tokens[0] == "ACK"):
-            data = tokens[1]
-            print_ACK(client, data)
 
     #Token Parse------------------------------------------------------------------
 
@@ -565,11 +589,6 @@ if __name__ == "__main__":
 
             #whoever sends this must have their player.received_question set to true and will be changed once the waiting for buzz state is entered
             received_question_confirmation(sender_id)
-            
-       
-        elif (tokens[0] == "ACK"):
-            data = tokens[1]
-            
-            print_ACK(client, data)
+    
 
         #Token Parse------------------------------------------------------------------
