@@ -1,105 +1,58 @@
 import streamlit as st
-from src.player import Player
+from .gui import draw_lobby
+from .player import Player
 
 players = {}
 cols = {}
+
+## 'Public' methods for controlling Lobby State
+def start_game():
+    st.session_state.game_start = True
+    st.experimental_rerun()
 
 def init(post_init=False):
     if not post_init: # TODO: receive from server
         st.session_state.i_voted = False
         st.session_state.im_ready = False
-        st.session_state.total_votes = 0
         st.session_state.total_ready = 0
         st.session_state.host_id = None
-
-#### Draw UI components
-# Called on each page update
-def init_cols():
-    global cols
-    c1, c2, c3, c4 = st.columns(4, gap="large")        
-    cols = { 1: c1, 2: c2, 3: c3, 4: c4 }
-    # cols[1].write("**Players**")
-    # cols[2].write("**Status**")
-    cols[1].subheader('Players')
-    cols[2].subheader('Status')
-
-    if 'ready_up' not in st.session_state:
-        # cols[3].write("**Vote Host**")
-        cols[3].subheader('Vote Host')
-    else:
-        cols[3].subheader("Ready Up")
-
-    # List each connected
-    for p in players:
-        if p.is_me:
-            cols[1].write(f"Player {p.id} (You)")
-        else:
-            cols[1].write(f"Player {p.id}")
-
-        if p.voted == False:
-            cols[2].write("Voting...")
-        else:
-            cols[2].write('Waiting...')
-
-        if 'ready_up' not in st.session_state:
-            cols[3].button('Vote',  disabled=(st.session_state.i_voted), on_click=vote_callback, key=f"vote_btn{p.id}")
-        elif p.is_me:
-            cols[3].button('Ready', on_click=ready_callback)
-
-def vote_counter():
-    nplayers = len(players)
-    total_votes = st.session_state.total_votes
-
-    if (total_votes <= nplayers):
-        cols[4].write(f"Votes: {total_votes}/{nplayers}")
-    else:
-        find_host()
-
-def vote_callback():
-    # testing
+        
+def vote_callback(id):
+    s = st.session_state.my_socket
+    s.send(f"Vote_Host-{id}".encode('utf8'))
+    st.session_state.i_voted = True
     st.session_state.total_votes += 1
 
 def ready_callback():
     st.session_state.total_ready += 1
 
-def ready_up():
-    nplayers = len(players)
-    total_ready = st.session_state.total_ready
-    if (total_ready <= nplayers):
-        cols[4].write(f"Ready: {total_ready}/{nplayers}")
-    else:
-        # Start game
-        st.session_state.game_start = True
-        st.experimental_rerun()
-
-#### Call server to update internal states
-
+#### Call server to update internal player states
 def update_players():
     global players
-    player_list = st.session_state.player_list
-    players = player_list      
+    players = st.session_state.players
 
 def find_host():
     # TODO: get host from server
     test_host = 1
     st.session_state.host_id = 1
-    if 'ready_up' not in st.session_state:
-        st.session_state.ready_up = False
+    if 'vote_over' not in st.session_state:
+        st.session_state.vote_over = True
         st.experimental_rerun()
-    ready_up()
 
-def main():
-    st.title('Lobby')
-    if 'total_votes' not in st.session_state:
+def main(state):
+    if 'i_voted' not in st.session_state:
         init()
 
+    ## Update Session State
     update_players()
-    init_cols()
+    
 
-    if 'ready_up' not in st.session_state:
-        vote_counter()
-    else:
-        ready_up()
+    ## Draw GUI
+    global cols
+    draw_lobby(cols, players, vote_callback, ready_callback, find_host)
+
+    if 'ready_up_over' in st.session_state:
+        start_game()
 
 if __name__ == '__main__':
     main()
