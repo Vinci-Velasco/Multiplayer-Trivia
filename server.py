@@ -6,7 +6,7 @@ from src import player
 from game import lobby_state
 
 HOST = "127.0.0.1"
-PORT = 7073
+PORT = 7072
 
 clients = {} # key: id - value: Client 
 
@@ -68,7 +68,7 @@ class Recieve_Connection_Thread(threading.Thread):
             thread.start()
             connections += 1
 
-           # Create a new Client and associated Player serialize, add to global dict
+           # Create a new Client and associated Player, add to global dict
             global clients
             client_id = connections
             p = player.Player(client_id)
@@ -76,6 +76,10 @@ class Recieve_Connection_Thread(threading.Thread):
             clients[client_id] = c
 
             PlayerNumber[addr] =  client_id, client_socket
+
+            # Notify all clients about the new connection (except this one)
+            send_message_to_all("Player_Update", "Connect", pickle.dumps(p), except_id=client_id)
+
 
         print(f"Done with connections ({connections}/{MAX_CONNECTIONS})")
 
@@ -101,16 +105,15 @@ def disconnect_client(client_socket):
             break
     
     if target != None:
-        client_sockets.remove(client_socket)
-        client_addrs.remove(target.addr)
-        del PlayerNumber[target.addr]
+        # client_sockets.remove(client_socket)
+        # client_addrs.remove(target.addr)
+        # del PlayerNumber[target.addr]
         # del clients[target.id]
         target.player_data.disconnected = True
         client_socket.close()
 
-        if len(client_sockets) >= 1:
-            # notify remaining clients of disconnect
-            send_player_update_to_all("Disconnect", target.id, except_id=target.id)
+        # notify remaining clients of disconnected client
+        send_player_update_to_all("Disconnect", target.id)
 
         print(f"...closing inactive listening thread for client {target.id}")
 
@@ -157,7 +160,7 @@ def send_data_to_client(client, data_type, data):
 
     # Serialize Object before sending            
     elif data_type == "Object":
-        print(f"....sending serialize to Client {client.id}: {data}")
+        print(f"....sending Object to Client {client.id}: {data}")
         data_object = pickle.dumps(data)
         client.socket.send(data_object)
 
@@ -167,31 +170,35 @@ def send_message_to_client(client, header, label, data):
     client.socket.sendall(pickle.dumps(message))
 
     to_console = str(data)[:10] + "..."
-    print(f"....sending message to Client {client.id}:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }")
+    print(f"....sending message to Client {client.id}:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
 
 
 #### Send message to all clients except except_id
 def send_message_to_all(header, label, data, except_id=-1):
     message = {"header": header, "label":label, "data":data}
+    sent = False
 
     for c in clients.values():
         if c.id != except_id and c.player_data.disconnected == False:
             c.socket.sendall(pickle.dumps(message))
+            if sent == False:
+                sent == True
 
-    to_console = str(data)[:10] + "..."
-    print("....sending message to all clients:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }")
+    if sent:
+        to_console = str(data)[:10] + "..."
+        print("....sending message to all clients:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
 
 #### Send an update to all clients about a specific Player
-def send_player_update_to_all(update, player_data, as_object=False, except_id=-1):
+def send_player_update_to_all(update, player_data, serialize=False):
     header = "Player_Update"
     label = update # e.g. Connect, Disconnect
 
-    if as_object == True:
+    if serialize == True:
         data = pickle.dumps(player_data)
     else:
         data = player_data
 
-    send_message_to_all(header, label, data, except_id)
+    send_message_to_all(header, label, data)
 
 #### Handle requests for server data, send back a response containing the requested data
 def parse_data_req(client, request, send_to_all=False):

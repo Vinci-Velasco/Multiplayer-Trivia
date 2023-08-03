@@ -17,11 +17,11 @@ def listening_thread(sock, message_queue):
         except UnicodeDecodeError: # If decoding doesn't work, message is not a string. Deserialize with pickle
             message = pickle.loads(recv)
             to_console = "{ header: " + message['header'] + ", label: " + message['label'] + ", data: " + str(message['data'])[:10] + "... }"
-            print(f"Received message from server: {to_console}")
+            print(f"Received message from server: {to_console}\n")
             message_queue.put(message)
             update_queue(message_queue)
         else:
-            print(f"Received a string from server: {message}")
+            print(f"Received a string from server: {message}\n")
             for m in message.split("\n"):
                 if m != "":
                     message_queue.put(m)
@@ -65,7 +65,6 @@ def parse_message(message):
                 if my_id in players:
                     my_player = players[my_id]
                     my_player.is_me = True
-                    st.session_state.my_player = my_player
 
         elif label == "players_in_lobby":
             players = {}
@@ -98,14 +97,16 @@ def parse_message(message):
         update = message['label']
         player_data = message['data']
 
-        update_player(update, player_data)
+        if 'players' in st.session_state:
+            update_player(update, player_data)
         
 def update_player(update, player_data):
     players = st.session_state.players
 
     if update == "Connect": # add newly connected player to dict
-        player = pickle.load(player_data)
-        players[player.id] = player
+        player = pickle.loads(player_data)
+        id = player.id
+        players[id] = player
     else: # update attributes only if player with this ID exists
         id = int(player_data)
         if id in players: 

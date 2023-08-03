@@ -21,8 +21,6 @@ def test_connect(host, port):
 
 def init_message_queue():
     # Add queue to Streamlit's session state, so it can be accessed throughout the application instance
-    st.session_state.new_message = None
-    st.session_state.num_messages = 0
     st.session_state.message_queue = Queue()
 
     s = st.session_state.my_socket

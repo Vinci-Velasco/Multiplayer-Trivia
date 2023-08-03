@@ -8,15 +8,16 @@ def init_lobby(s):
     client.req_data_from_server(s, "my_id")
     client.req_data_from_server(s, "players_in_lobby")
 
-    my_id = -1
-    players = {}
-    total_votes = 0
+    st.spinner("loading lobby...")
 
-    # Store values into Streamlit App
-    st.session_state.my_id = my_id
-    st.session_state.players = players
-    st.session_state.total_votes = total_votes
-    st.session_state.lobby_state = "LOADING"
+    if 'my_id' not in st.session_state:
+        st.session_state.my_id = -1
+
+    if 'players' not in st.session_state:
+        st.session_state.players = {}
+        st.session_state.total_votes = 0
+    else:
+        st.session_state.lobby_start = True
 
 def main():
     #### connect to server
@@ -29,12 +30,12 @@ def main():
 
     else:
         s = st.session_state.my_socket
-        message = st.session_state.new_message
 
         if 'game_start' not in st.session_state:
-            if 'my_id' not in st.session_state:
+            if 'lobby_start' not in st.session_state:
                 init_lobby(s)
-            lobby.main()
+            else:
+                lobby.main()
 
 if __name__ == '__main__':
     if 'server_disconnect' not in st.session_state:

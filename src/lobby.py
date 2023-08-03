@@ -44,6 +44,8 @@ def main():
 
     if 'ready_up_over' in st.session_state:
         start_game()
+    
+    st.write(st.session_state)
 
 if __name__ == '__main__':
     main()
