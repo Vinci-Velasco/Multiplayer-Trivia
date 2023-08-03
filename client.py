@@ -54,7 +54,7 @@ def server_disconnect():
 
 def req_data_from_server(s, request):
     message = f"Req_Data-String-{request}\n" 
-    print(f"...sending message to server: {message}")
+    print(f"...sending message to server: {message}\n")
     s.sendall(message.encode('utf8'))
 
 def send_data_to_server(s, header, data):
@@ -88,8 +88,8 @@ def parse_message(message):
 #### Data Strings need to be decoded with utf8
 def req_data_string(s, string):
     message = f"Req_Data-String-{string}\n" 
-    print(f"...sending message to server: {message}")
-    s.send(message.encode('utf8'))
+    print(f"...sending message to server: {message}\n")
+    s.sendall(message.encode('utf8'))
 
 def ready_up_test():
     HOST = "127.0.0.1"

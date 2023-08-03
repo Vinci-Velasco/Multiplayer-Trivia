@@ -10,7 +10,7 @@ from src.question_bank import Question
 from game import lobby_state, game_state
 
 HOST = "127.0.0.1"
-PORT = 7070
+PORT = 7076
 
 clients = {} # key: id - value: Client 
 
@@ -238,7 +238,7 @@ def send_player_update_to_all(update, player_data, serialize=False):
 
     send_message_to_all(header, label, data)
 
-def send_state_update_to_all(state_type, state_data, serialize=False):
+def send_state_update(state_type, state_data, serialize=False, to_all=False, client=None):
     header = "State_Update"
     label = state_type #e.g. Lobby, Game
 
@@ -247,7 +247,10 @@ def send_state_update_to_all(state_type, state_data, serialize=False):
     else:
         data = state_data
 
-    send_message_to_all(header, label, data)
+    if to_all == True:
+        send_message_to_all(header, label, data)
+    elif client != None:
+        send_message_to_client(client, header, label, data)
 
 #### Handle requests for server data, send back a response containing the requested data
 def parse_data_req(client, request, send_to_all=False):
@@ -266,10 +269,11 @@ def parse_data_req(client, request, send_to_all=False):
         serialize = True
 
     elif request == "lobby_state":
+        lobby.update_players(player_list=get_all_players())
+        print("lobby_state: getting state")
         lobby_state = lobby.get_state()
-        # TODO: remove lobby_state from Req_Data
-        send_state_update_to_all("Lobby", lobby_state) 
-
+        print(f"lobby_state: sending state to all -> {lobby_state}")
+        send_state_update("Lobby", lobby_state, to_all=False, client=client)
         return 
     
     # Serialize data if needed
@@ -362,7 +366,7 @@ if __name__ == "__main__":
     #### Internal Lobby states and values
     host = None
     total_votes = 0
-    lobby = lobby_state.Lobby(get_all_players())
+    lobby = lobby_state.Lobby(player_list=get_all_players())
 
     while not (all_ready and host_found):
         #gets the message and its coresponding sender adderess
@@ -388,10 +392,10 @@ if __name__ == "__main__":
             clients[sender_id].player_data.readied_up = True
         
         #### Update internal Lobby State
-        lobby.update_players(get_all_players())
+        lobby.update_players(player_list=get_all_players())
         current_state = lobby.get_state()
         if lobby.state_changed():
-            send_state_update_to_all("Lobby", current_state)
+            send_state_update("Lobby", current_state, to_all=True)
         # Additionally calculate host and broadcast to all clients
         if  current_state == "FIND_HOST" and lobby.host_found() == False:
             host = lobby.calculate_host()

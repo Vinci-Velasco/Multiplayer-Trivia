@@ -10,7 +10,7 @@ def start_game():
     st.experimental_rerun()
 
 #### Initialize data upon first connection
-def init(s):
+def init_lobby(s):
     with st.spinner("loading lobby..."):
         client.req_data_from_server(s, "my_id")
         client.req_data_from_server(s, "players_in_lobby")
@@ -22,6 +22,8 @@ def init(s):
             st.session_state.players = {}
             st.session_state.total_votes = 0
             st.session_state.total_ready = 0
+        if 'my_player' not in st.session_state:
+            pass
         if "lobby_state" not in st.session_state:
             st.session_state.lobby_state = "WAIT"
         else:
@@ -44,7 +46,7 @@ def ready_callback():
 
 def main():
     if 'lobby_start' not in st.session_state:
-        init(st.session_state.my_socket)
+        init_lobby(st.session_state.my_socket)
     else:
         players = st.session_state.players
         lobby_state = st.session_state.lobby_state

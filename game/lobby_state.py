@@ -6,7 +6,7 @@ MIN_PLAYERS = 3
 init_state = "WAIT"
 
 class Lobby():
-    def __init__(self, player_list):
+    def __init__(self, player_list=[]):
         self.player_list = player_list
         self.current_state = init_state
         self.last_state = init_state
@@ -24,7 +24,8 @@ class Lobby():
     #### Get current state of Lobby
     def get_state(self):
         state = self.current_state
-        num_players = len(self.player_list)
+        player_list = self.player_list
+        num_players = len(player_list)
 
         if state == "START_GAME":
             return "START_GAME"
@@ -39,7 +40,7 @@ class Lobby():
     
         ## Start Host Voting phase
         elif state == "VOTE":
-            total_votes = self.get_total_votes(self.player_list)
+            total_votes = self.get_total_votes(player_list)
             if total_votes < num_players:
                 return self.update_state("VOTE")
             else:
@@ -55,7 +56,7 @@ class Lobby():
     
         ## Start READY_UP phase
         elif state == "READY_UP":
-            total_ready = self.get_total_ready(self.player_list)
+            total_ready = self.get_total_ready(player_list)
 
             if total_ready < num_players:
                 return self.update_state("READY_UP")

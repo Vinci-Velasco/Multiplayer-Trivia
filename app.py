@@ -1,3 +1,4 @@
+import sys
 import streamlit as st
 from src import connect_to_server, lobby, game, scoreboard
 
@@ -20,3 +21,4 @@ if __name__ == '__main__':
         main()
     else:
         st.error("server disconnected.")
+        sys.exit("server disconnected.")

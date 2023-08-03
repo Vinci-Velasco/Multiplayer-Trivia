@@ -37,6 +37,7 @@ def update_data(label, data):
                 if my_id in players:
                     my_player = players[my_id]
                     my_player.is_me = True
+                    st.session_state.my_player = my_player
 
     elif label == "players_in_lobby":
         players = {}
@@ -63,12 +64,19 @@ def update_data(label, data):
         st.session_state.total_votes = total_votes    
         st.session_state.total_ready = total_ready
         st.session_state.players = players 
+        
+    elif label == "lobby_state":
+        update_lobby_state(data)
+    else:
+        print(f"Error! received unrecognized Send_Data label: {label}")
 
 #### handle current Lobby State, e.g. if we are in Voting phase or Ready Up phase...
 def update_lobby_state(lobby_state):
     if lobby_state == "WAIT":
         # wait until minimum amount of players are in lobby before starting the game
-        pass
+        # TODO: turn off minimum players for testing purposes :]
+        st.session_state.min_players = True
+
     elif lobby_state == "VOTE":
         # change session state variables so that lobby.py shows voting
         # send ack
@@ -78,10 +86,11 @@ def update_lobby_state(lobby_state):
         # send ack
         pass
     elif lobby_state == "READY_UP":
-        # st.session_state.ready_up = True
+        st.session_state.ready_up = True
         # st.session_state.vote_over = True
-        # send ack
         pass
     elif lobby_state == "START_GAME":
         # send ack
         pass
+
+    st.session_state.lobby_state = lobby_state
