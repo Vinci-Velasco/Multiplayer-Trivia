@@ -11,6 +11,7 @@ def listening_thread(sock, message_queue):
         try:
             recv = sock.recv(BUFFER_SIZE)
             message = recv.decode("utf-8")
+            
             if not message:
                 server_disconnect()
                 break
@@ -48,6 +49,8 @@ def update_queue(message_queue):
 
 def server_disconnect():
     st.session_state['server_disconnect'] = True
+    st.session_state.my_socket.close()
+    del st.session_state.my_socket
     time.sleep(.1)
     streamlit_loop.call_soon_threadsafe(notify)
 
@@ -113,7 +116,9 @@ def update_player(update, player_data):
             if update == "Disconnect":
                 players[id].disconnected = True 
             elif update == "Already_Voted":
-                players[id].already_voted = True
+                if players[id].already_voted == False:
+                    players[id].already_voted = True
+                    st.session_state.total_votes += 1
             elif update == "Readied_Up":
                 players[id].readied_up = True
             elif update == "Is_Host":

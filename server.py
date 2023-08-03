@@ -6,7 +6,7 @@ from src import player
 from game import lobby_state
 
 HOST = "127.0.0.1"
-PORT = 7072
+PORT = 7071
 
 clients = {} # key: id - value: Client 
 
@@ -36,7 +36,7 @@ def listening_thread(client_socket, addr, message_queue):
                     for m in message.split("\n"):
                         if m != "":
                             message_queue.put((m, addr))
-                    print(f"Recieved message from {addr}: {message}")
+                    print(f"Recieved message from {addr}: {message}\n")
          
 # Custom thread class that creates new threads once connections come in
 class Recieve_Connection_Thread(threading.Thread):
@@ -296,7 +296,6 @@ if __name__ == "__main__":
 
     #### Internal Lobby states and values
     host = None
-    total_votes = 0
     while not (all_ready and host_found):
         #gets the message and its coresponding sender adderess
         message, addr = message_queue.get()    
