@@ -22,13 +22,15 @@ def draw_lobby(cols, players, vote_callback, ready_callback, find_host):
         else:
             cols[1].write(f"Player {p.id}")
 
-        if p.already_voted == False:
+        if p.disconnected == True:
+            cols[2].write("Disconnected")
+        elif p.already_voted == False:
             cols[2].write("Voting...")
         else:
             cols[2].write('Waiting...')
 
         if 'vote_over' not in st.session_state:
-            cols[3].button('Vote',  disabled=(st.session_state.i_voted), on_click=(lambda: vote_callback(p.id)), key=f"vote_btn{p.id}")
+            cols[3].button(f'Vote P{p.id}',  disabled=(st.session_state.i_voted or p.disconnected), on_click=(lambda: vote_callback(p.id)), key=f"vote_btn{p.id}")
         elif p.is_me:
             cols[3].button('Ready', on_click=ready_callback)
 

@@ -9,6 +9,7 @@ class Player():
         self.is_me = is_me
         self.already_voted = False
         self.readied_up = False
+        self.disconnected = False
         self.received_question = False
         self.has_lock = False
         self.entered_game_lobby = False

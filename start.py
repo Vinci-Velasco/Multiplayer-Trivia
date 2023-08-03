@@ -1,3 +1,5 @@
+#### Start the Streamlit application on a random port number, allowing for multiple instances of the client
+
 import os
 import socket
 
