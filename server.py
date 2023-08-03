@@ -322,6 +322,7 @@ def send_Host_To_All_Clients(host):
     send_message_to_all(f"Send_Data-host_id-{host.id}")
 
 def send_Start_Game_To_All_Clients():
+    # TODO: change this to proper client message format eventually, i'm assuming this is for testing tho so i wont touch it
     for client in clients.values():
         client.socket.send(f"Start_Game-NA".encode('utf8'))
 
@@ -346,7 +347,10 @@ def answer(sender_id, event, message):
 
     # send answer to host
     host_client = get_host()
-    send_data_to_client(host_client, "String", message)
+
+    send_message_to_client(host_client, "Host_Verify", "player_answer", message)
+
+    # send_data_to_client(host_client, "String", message)
 
     # stop timer thread
     event.set()
@@ -359,12 +363,11 @@ def send_question(question_bank):
     rand_num = random.randint(0, num_of_questions-1)
     selected_question = question_bank["questions"][rand_num]
 
-    question_obj = Question(selected_question["id"], selected_question["question"], selected_question["answer"])
+    q = Question(selected_question["id"], selected_question["question"], selected_question["answer"])
 
-    # serialize and send
-    global clients
-    for client_id in clients:
-        send_data_to_client(clients[client_id], "Object", question_obj)
+    # serialize and send to all
+    q_data = pickle.dumps(q)
+    send_message_to_all("Send_Data", "Question", q_data)
 
     # avoid repeat questions
     question_bank["questions"].remove(selected_question)
@@ -466,6 +469,7 @@ if __name__ == "__main__":
         if message == "Timeout" and get_playerid_who_has_lock() is not None:
             buzz_lock = None
 
+            # TODO: didnt change this to the new send_message_to_client yet cus idk what the purpose is
             for client_id in clients:
                 send_data_to_client(clients[client_id], "String", "Timeout")
 
@@ -485,31 +489,10 @@ if __name__ == "__main__":
             data_type = tokens[1]
             request = tokens[2]
 
-
-            # Send client's own Player ID
-            if request == "my_id":
-                send_data_to_client(client, data_type, sender_id)
-
-
-            # Send List of online Player IDs
-            elif request == "player_id_list":
-                player_id_list = []
-                for c in clients.values():
-                    player_id_list.append(c.id)
-                send_data_to_client(client, data_type, player_id_list)
-
-
-            elif request == "all_players_list":
-                all_players = get_all_players()
-                send_data_to_client(client, data_type, all_players)
-
-
-            # Send client's own Player object
-            elif request == "my_player":
-                p_object = client.player_data
-                send_data_to_client(client, data_type, p_object)
-
-            if request == "game_state":
+            if request != "game_state":
+                parse_data_req(client, request)
+            # TODO: separate game_state parser after testing is done
+            else:
                 all_players = get_all_players()
 
                 #PRINTING FOR TESTING - REMOVE IF NEEDED
@@ -608,7 +591,9 @@ if __name__ == "__main__":
                     break
 
 
-                send_data_to_client(client, data_type, current_state)
+                send_message_to_client(client, "Send_Data", "game_state", current_state) 
+
+                # send_data_to_client(client, data_type, current_state)
 
 
 
