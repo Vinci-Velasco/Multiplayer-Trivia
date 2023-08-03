@@ -10,3 +10,12 @@ class Player():
         self.already_voted = False
         self.readied_up = False
         self.disconnected = False
+        self.received_question = False
+        self.has_lock = False
+        self.entered_game_lobby = False
+
+    def increaseScore(self):
+        self.score += 1
+    
+    def getScore(self):
+        return self.score
