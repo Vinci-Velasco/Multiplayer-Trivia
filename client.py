@@ -119,7 +119,7 @@ def ready_up_test():
       
             if(isString == False):
            
-                if(str(message['data'])[:10] == "READY_UPStart_Game" or str(message['data'])[:10] == "Start_Game"):
+                if(str(message['data'])[:10] == "READY_UPStart_Game" or str(message['data'])[:10] == "START_GAME"):
                     break
                 elif((str(message['label'])[:10] == "my_id")):
 

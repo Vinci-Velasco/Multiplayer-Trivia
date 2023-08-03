@@ -329,9 +329,8 @@ def send_Host_To_All_Clients(host):
     send_message_to_all("Send_Data", "host_id", host.id)
 
 def send_Start_Game_To_All_Clients():
-    # TODO: change this to proper client message format eventually, i'm assuming this is for testing tho so i wont touch it
-    for client in clients.values():
-        client.socket.send(f"Start_Game-NA".encode('utf8'))
+   
+    send_message_to_all("Send_Data", "lobby_state", "START_GAME")
 
 def hostChoice():
     pass
