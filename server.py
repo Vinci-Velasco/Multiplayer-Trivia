@@ -18,7 +18,7 @@ def listening_thread(client_socket, addr, message_queue):
         while True:
             try:
                 message = client_socket.recv(BUFFER_SIZE).decode("utf8")
-            except ConnectionResetError:
+            except ConnectionResetError as e:
                 disconnect_client(client_socket)
                 break
             else:
@@ -108,11 +108,11 @@ def disconnect_client(client_socket):
         target.player_data.disconnected = True
         client_socket.close()
 
-        if len(clients) >= 1:
+        if len(client_sockets) >= 1:
             # notify remaining clients of disconnect
-            send_message_to_all("Disconnect", "player_id", client.id)
+            send_player_update_to_all("Disconnect", target.id, except_id=target.id)
 
-        print(f"...closing inactive listening thread for client {client.id}")
+        print(f"...closing inactive listening thread for client {target.id}")
 
 # Returns a list of all Player data from all connected clients
 def get_all_players():
@@ -170,14 +170,28 @@ def send_message_to_client(client, header, label, data):
     print(f"....sending message to Client {client.id}:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }")
 
 
-#### Send message to all clients
-def send_message_to_all(header, label, data):
+#### Send message to all clients except except_id
+def send_message_to_all(header, label, data, except_id=-1):
     message = {"header": header, "label":label, "data":data}
+
     for c in clients.values():
-        c.socket.sendall(pickle.dumps(message))
+        if c.id != except_id and c.player_data.disconnected == False:
+            c.socket.sendall(pickle.dumps(message))
 
     to_console = str(data)[:10] + "..."
     print("....sending message to all clients:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }")
+
+#### Send an update to all clients about a specific Player
+def send_player_update_to_all(update, player_data, as_object=False, except_id=-1):
+    header = "Player_Update"
+    label = update # e.g. Connect, Disconnect
+
+    if as_object == True:
+        data = pickle.dumps(player_data)
+    else:
+        data = player_data
+
+    send_message_to_all(header, label, data, except_id)
 
 #### Handle requests for server data, send back a response containing the requested data
 def parse_data_req(client, request, send_to_all=False):
@@ -187,7 +201,7 @@ def parse_data_req(client, request, send_to_all=False):
     if request == "my_id":
         data = client.id
 
-    elif request == "all_players":
+    elif request == "players_in_lobby":
         data = get_all_players()
         serialize = True
 
@@ -236,8 +250,9 @@ def hostChoice():
 def add_host_vote(client, vote_id):
     clients[vote_id].player_data.votes += 1
     clients[client.id].player_data.already_voted = True
-    # update all clients
-    parse_data_req(None, "all_players", send_to_all=True)
+    # update all clients that this client has voted
+    # parse_data_req(None, "players_in_lobby", send_to_all=True)
+    send_player_update_to_all("Already_Voted", client.id)
 
 def voteHost():
     pass

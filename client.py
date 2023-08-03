@@ -16,12 +16,12 @@ def listening_thread(sock, message_queue):
                 break
         except UnicodeDecodeError: # If decoding doesn't work, message is not a string. Deserialize with pickle
             message = pickle.loads(recv)
-            to_console = "{ header: " + message["header"] + ", label: " + message["label"] + " }"
+            to_console = "{ header: " + message['header'] + ", label: " + message['label'] + ", data: " + str(message['data'])[:10] + "... }"
             print(f"Received message from server: {to_console}")
             message_queue.put(message)
             update_queue(message_queue)
         else:
-            print(f"Received message from server: {message}")
+            print(f"Received a string from server: {message}")
             for m in message.split("\n"):
                 if m != "":
                     message_queue.put(m)
@@ -34,12 +34,13 @@ def update_queue(message_queue):
     except Empty as e:
         raise Exception('error, queue is empty. did server disconnect?') from e
     else:
-        try:
-            # parse message as string
-            parse_message_as_string(message)
-        except AttributeError:
-            # parse message with pickle
-            parse_message(message)
+        parse_message(message)
+        # try:
+        #     # parse message as string
+        #     parse_message_as_string(message)
+        # except AttributeError:
+        #     # parse message with pickle
+        #     parse_message(message)
 
         # Refresh app + message queue every 0.1 seconds
         time.sleep(.1)
@@ -60,18 +61,19 @@ def parse_message(message):
             st.session_state.my_id = my_id
 
             if 'players' in st.session_state:
-                players = st.session_state.players 
-                if len(players) >= my_id:
+                players = st.session_state.players
+                if my_id in players:
                     my_player = players[my_id]
                     my_player.is_me = True
                     st.session_state.my_player = my_player
 
-        elif label == "all_players":
+        elif label == "players_in_lobby":
             players = {}
             total_votes = 0
             total_ready = 0 
-            all_players = pickle.loads(data)
-            for p in all_players:
+            players_in_lobby = pickle.loads(data)
+
+            for p in players_in_lobby:
                 p_id = int(p.id)
                 my_id = st.session_state.my_id
 
@@ -86,25 +88,49 @@ def parse_message(message):
                     total_ready += 1
 
                 players[p_id] = p
-            st.session_state.players = players 
-            st.session_state.total_votes = total_votes
 
-    elif message['header'] == "Disconnect":
-        p_id = int(message['data'])
-        players = st.session_state.players
-        players[p_id].disconnected = True 
+            st.session_state.total_votes = total_votes    
+            st.session_state.total_ready = total_ready
+            st.session_state.players = players 
+
+    # receive an update about a Player in the game
+    elif message['header'] == "Player_Update":
+        update = message['label']
+        player_data = message['data']
+
+        update_player(update, player_data)
+        
+def update_player(update, player_data):
+    players = st.session_state.players
+
+    if update == "Connect": # add newly connected player to dict
+        player = pickle.load(player_data)
+        players[player.id] = player
+    else: # update attributes only if player with this ID exists
+        id = int(player_data)
+        if id in players: 
+            if update == "Disconnect":
+                players[id].disconnected = True 
+            elif update == "Already_Voted":
+                players[id].already_voted = True
+            elif update == "Readied_Up":
+                players[id].readied_up = True
+            elif update == "Is_Host":
+                players[id].is_host = True
+            elif update == "Score":
+                players[id].score += 1
 
 # LEGACY, all messages coming in need to be deserialized
-def parse_message_as_string(message):
-    tokens = message.split('-')
+# def parse_message_as_string(message):
+#     tokens = message.split('-')
 
-    if tokens[0] == "Send_Data":
-        label = tokens[2]
-        data = tokens[3]
+#     if tokens[0] == "Send_Data":
+#         label = tokens[2]
+#         data = tokens[3]
 
-        if label == "my_id":
-            my_id = int(data)
-            st.session_state.my_id = my_id
+#         if label == "my_id":
+#             my_id = int(data)
+#             st.session_state.my_id = my_id
 
 #### handle current Lobby State, e.g. if we are in Voting phase or Ready Up phase...
 def update_lobby_state(lobby_state):
@@ -128,6 +154,11 @@ def update_lobby_state(lobby_state):
         # send ack
         pass
 
+def req_data_from_server(s, request):
+    message = f"Req_Data-String-{request}\n" 
+    print(f"...sending message to server: {message}")
+    s.send(message.encode('utf8'))
+
 #### Data Strings need to be decoded with utf8
 def req_data_string(s, string):
     message = f"Req_Data-String-{string}\n" 
@@ -139,7 +170,6 @@ def req_data_string(s, string):
 def req_data_object(s, object):
     BUFFER_SIZE = 1024
     s.send(f"Req_Data-Object-{object}\n".encode('utf8'))
-
 
 def ready_up_test():
     HOST = "127.0.0.1"

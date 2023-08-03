@@ -1,8 +1,6 @@
 import streamlit as st
 from .gui import draw_lobby
-from .player import Player
 
-players = {}
 cols = {}
 
 ## 'Public' methods for controlling Lobby State
@@ -26,11 +24,6 @@ def vote_callback(id):
 def ready_callback():
     st.session_state.total_ready += 1
 
-#### Call server to update internal player states
-def update_players():
-    global players
-    players = st.session_state.players
-
 def find_host():
     # TODO: get host from server
     test_host = 1
@@ -43,9 +36,8 @@ def main():
     if 'i_voted' not in st.session_state:
         init()
 
-    ## Update Session State
-    update_players()
-    
+    players = st.session_state.players
+
     ## Draw GUI
     global cols
     draw_lobby(cols, players, vote_callback, ready_callback, find_host)
