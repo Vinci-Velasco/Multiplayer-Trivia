@@ -506,7 +506,7 @@ if __name__ == "__main__":
             request = tokens[2]
 
             if request != "game_state":
-                parse_data_req(client, current_state, request)
+                current_state = parse_data_req(client, current_state, request)
             # TODO: separate game_state parser after testing is done
             else:
                 all_players = get_all_players()
