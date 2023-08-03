@@ -1,4 +1,5 @@
 import streamlit as st
+from queue import Empty
 from src import connect_to_server, lobby, game, scoreboard
 import client
 
@@ -51,4 +52,7 @@ def main():
             lobby.main()
 
 if __name__ == '__main__':
-    main()
+    if 'server_disconnect' not in st.session_state:
+        main()
+    else:
+        st.error("server disconnected.")

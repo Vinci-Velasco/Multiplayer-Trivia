@@ -2,7 +2,7 @@ import socket
 import time
 import pickle
 import streamlit as st
-from queue import Queue
+from queue import Empty
 from src.st_notifier import notify, streamlit_loop 
 
 def listening_thread(sock, message_queue):
@@ -11,9 +11,12 @@ def listening_thread(sock, message_queue):
         try:
             recv = sock.recv(BUFFER_SIZE)
             message = recv.decode("utf-8")
+            if not message:
+                server_disconnect()
+                break
         except UnicodeDecodeError: # If decoding doesn't work, message is not a string. Deserialize with pickle
             message = pickle.loads(recv)
-            to_console = message["header"] + "-" + message["label"]
+            to_console = "{ header: " + message["header"] + ", label: " + message["label"] + " }"
             print(f"Received message from server: {to_console}")
             message_queue.put(message)
             update_queue(message_queue)
@@ -28,9 +31,9 @@ def listening_thread(sock, message_queue):
 def update_queue(message_queue):
     try:
         message = message_queue.get(block=False)
-        print(message)
-    except Queue.empty:
-        print("error, queue is empty")
+    except Empty as e:
+        server_disconnect()
+        raise Exception('error, queue is empty. did server disconnect?') from e
     else:
         try:
             # parse message as string
@@ -39,10 +42,14 @@ def update_queue(message_queue):
             # parse message with pickle
             parse_message(message)
 
-    # Refresh app + message queue every 0.1 seconds
+        # Refresh app + message queue every 0.1 seconds
+        time.sleep(.1)
+        streamlit_loop.call_soon_threadsafe(notify)
+
+def server_disconnect():
+    st.session_state['server_disconnect'] = True
     time.sleep(.1)
     streamlit_loop.call_soon_threadsafe(notify)
-
 
 def parse_message(message):
     if message["header"] == "Send_Data":
@@ -79,10 +86,8 @@ def parse_message_as_string(message):
             my_id = int(data)
             st.session_state.my_id = my_id
         elif label == "all_players":
-            print(data)
             all_players = pickle.loads(data.encode("utf-8"))
             st.session_state.all_players = all_players 
-            print(all_players)
         elif label == "lobby_state":
             pass
             

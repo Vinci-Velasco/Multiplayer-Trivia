@@ -6,9 +6,9 @@ from src import player
 from game import lobby_state
 
 HOST = "127.0.0.1"
-PORT = 7070
+PORT = 7073
 
-clients = {}
+clients = {} # key: id - value: Client 
 
 # Thread that deals with listening to clients
 def listening_thread(client_socket, addr, message_queue):
@@ -18,7 +18,7 @@ def listening_thread(client_socket, addr, message_queue):
         while True:
             try:
                 message = client_socket.recv(BUFFER_SIZE).decode("utf8")
-            except ConnectionResetError as e:
+            except ConnectionResetError:
                 disconnect_client(client_socket)
                 break
             else:
@@ -27,8 +27,6 @@ def listening_thread(client_socket, addr, message_queue):
                     disconnect_client(client_socket)
                     break
                 
-                print(f"Recieved message from {addr}")
-
                 # receive a ping
                 if message == "ping":
                     print("....got ping, sent pong")
@@ -38,6 +36,7 @@ def listening_thread(client_socket, addr, message_queue):
                     for m in message.split("\n"):
                         if m != "":
                             message_queue.put((m, addr))
+                    print(f"Recieved message from {addr}: {message}")
          
 # Custom thread class that creates new threads once connections come in
 class Recieve_Connection_Thread(threading.Thread):
@@ -154,15 +153,20 @@ def send_data_to_client(client, data_type, data):
 #### Send message to client with header and label that describes the data
 def send_message_to_client(client, header, label, data):
     message = {"header": header, "label": label, "data": data}
-    print(f"....sending message to Client {client.id}: {header}-{label}-<data>")
     client.socket.sendall(pickle.dumps(message))
+
+    to_console = str(data)[:10] + "..."
+    print(f"....sending message to Client {client.id}:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }")
+
 
 #### Send message to all clients
 def send_message_to_all(header, label, data):
     message = {"header": header, "label":label, "data":data}
-    print(f"....sending message to all clients: {header}-{label}-<data>")
-    for c in clients:
+    for c in clients.values():
         c.socket.sendall(pickle.dumps(message))
+
+    to_console = str(data)[:10] + "..."
+    print("....sending message to all clients:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }")
 
 #### Handle requests for server data, send back a response containing the requested data
 def parse_data_req(client, request, send_to_all=False):
@@ -263,7 +267,6 @@ if __name__ == "__main__":
     while not (all_ready and host_found):
         #gets the message and its coresponding sender adderess
         message, addr = message_queue.get()    
-        print(message)
 
         #### Information about the Sender
         sender_id = PlayerNumber[addr][0]
