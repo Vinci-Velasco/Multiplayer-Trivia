@@ -26,7 +26,7 @@ def listening_thread(client_socket, addr, message_queue):
                 if not message:
                     disconnect_client(client_socket)
                     break
-                
+            
                 # receive a ping
                 if message == "ping":
                     print("....got ping, sent pong")
@@ -105,6 +105,7 @@ def disconnect_client(client_socket):
         client_addrs.remove(target.addr)
         del PlayerNumber[target.addr]
         del clients[target.id]
+        client_socket.close()
         print(f"...closing inactive listening thread for client {client.id}")
 
 # Returns a list of all Player data from all connected clients
@@ -139,6 +140,10 @@ def allPlayersReady(ready_clients):
 #### Automatically format data before sending based on data_type
 # TODO: LEGACY, needs to be redone
 def send_data_to_client(client, data_type, data):
+    # if client disconnected, don't do anything
+    if client.socket.fileno() == -1:
+        return
+    
     # Encode String before sending
     if data_type == "String":
         print(f"....sending string to Client {client.id}: {data}")
