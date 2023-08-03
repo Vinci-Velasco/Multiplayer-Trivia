@@ -570,7 +570,7 @@ if __name__ == "__main__":
 
                     else:
 
-                        inex = 1
+                        index = 1
                         #goes through all players and takes away lock from player who buzzed but also give them a point
                         for p in all_players:
 
@@ -613,8 +613,9 @@ if __name__ == "__main__":
            try_to_grab_buzz_lock(sender_id, time_thread)
 
         elif (tokens[0] == "Host_Choice"):
-
+           
             host_voted = True
+
             if(tokens[1] == "Y"):
                give_player_point = True
             else:
