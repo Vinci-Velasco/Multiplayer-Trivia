@@ -256,9 +256,7 @@ def send_message_to_all(header, label, data, except_id=-1):
 
     for c in clients.values():
         if c.id != except_id and c.player_data.disconnected == False:
-            print("test: ")
-            print(c.player_data.id)
-            print(" \n")
+       
             c.socket.sendall(pickle.dumps(message))
             if sent == False:
                 sent == True
@@ -304,7 +302,7 @@ def parse_data_req(client, current_state, request, send_to_all=False):
                 host = lobby_state.calculate_host(all_players)
                 clients[host.id].player_data.is_host = True
                 current_state = "HOST_FOUND"
-                print("aklfja;slkfj;asklfj;aslkjf;laskfj;askljf;sklajf;klasjf;klja00\n")
+             
                 send_Host_To_All_Clients(host)
             elif current_state == "START_GAME":
                 send_Start_Game_To_All_Clients()
