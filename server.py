@@ -462,10 +462,11 @@ if __name__ == "__main__":
         if len(question_bank) == 0:
             break
 
-        send_question(question_bank)
+        #send_question(question_bank)
         message, addr = message_queue.get()
         print(message)
 
+        #enter if the answer timer ran out and someone actually buzzed in
         if message == "Timeout" and get_playerid_who_has_lock() is not None:
             buzz_lock = None
 
@@ -473,6 +474,10 @@ if __name__ == "__main__":
             for client_id in clients:
                 send_data_to_client(clients[client_id], "String", "Timeout")
 
+            #player who has lock loses it 
+            clients[get_playerid_who_has_lock()].player_data.has_lock = False
+
+            #we go back to buzzing stage to so others can get a chance to buzz
             print("Back to buzz!")
             current_state = "WAITING_FOR_BUZZ"
 
@@ -518,7 +523,12 @@ if __name__ == "__main__":
                 elif current_state == "WAITING_FOR_ANSWER":
 
                     #remove this when timer stuff gets added
-                    current_state = "GOT_ANSWER"
+
+                    if(answer_came):
+                        current_state = "GOT_ANSWER"
+                        answer_came = False
+                    else:
+                        current_state = "WAITING_FOR_ANSWER"
 
 
                 elif current_state == "WAITING_FOR_HOSTS_CHOICE":
@@ -604,11 +614,11 @@ if __name__ == "__main__":
 
         elif (tokens[0] == "Host_Choice"):
 
-           host_voted = True
-           #TODO:call/create the hostChoice funciton which actually asks the host if the answer is right or wrong
-           #the hostChoice function should return true or false which gets stored into give_player_point
-           #ie. give_player_point = hostChoice()
-           pass
+            host_voted = True
+            if(tokens[1] == "Y"):
+               give_player_point = True
+            else:
+               give_player_point = False
 
         elif (tokens[0] == "Answer"):
             answer_came = answer(PlayerNumber[addr][0], event, tokens[1])
