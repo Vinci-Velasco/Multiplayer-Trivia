@@ -104,7 +104,8 @@ def disconnect_client(client_socket):
         client_sockets.remove(client_socket)
         client_addrs.remove(target.addr)
         del PlayerNumber[target.addr]
-        del clients[target.id]
+        # del clients[target.id]
+        target.player_data.disconnected = True
         client_socket.close()
         print(f"...closing inactive listening thread for client {client.id}")
 
