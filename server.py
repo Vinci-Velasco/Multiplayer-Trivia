@@ -7,7 +7,6 @@ from queue import Queue
 
 from src import player
 from src.question_bank import Question
-from client import Client
 from game import lobby_state, game_state
 
 HOST = "127.0.0.1"
@@ -49,6 +48,7 @@ class Recieve_Connection_Thread(threading.Thread):
         self.server = server
         self.message_queue = message_queue
         self.stop_connections = False
+
 
     # Listens to connections and creates new threads. Closes once max connections achieved
     # or stop_connections is set to True (via the stop() method)
@@ -92,6 +92,14 @@ class Recieve_Connection_Thread(threading.Thread):
         self.stop_connections = True
         socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((HOST, PORT))
 
+
+class Client():
+    def __init__(self, id, socket, addr, player):
+        self.id = id
+        self.socket = socket
+        self.addr = addr
+        self.player_data = player # use Player class from src/player.py
+
 def disconnect_client(client_socket):
     target = None
     for c in clients.values():
@@ -100,6 +108,10 @@ def disconnect_client(client_socket):
             break
     
     if target != None:
+        # client_sockets.remove(client_socket)
+        # client_addrs.remove(target.addr)
+        # del PlayerNumber[target.addr]
+        # del clients[target.id]
         target.player_data.disconnected = True
         client_socket.close()
 
@@ -115,6 +127,7 @@ def get_all_players():
         all_players.append(c.player_data)
 
     return all_players
+
 
 def givePoint(client_id):
     client = clients[client_id]
@@ -287,6 +300,10 @@ def add_host_vote(client, vote_id):
     clients[client.id].player_data.already_voted = True
     # update all clients that this client has voted
     send_player_update_to_all("Already_Voted", client.id)
+
+def voteHost():
+    pass
+
 
 # Sends question from question bank to all clients
 def send_question(question_bank):
