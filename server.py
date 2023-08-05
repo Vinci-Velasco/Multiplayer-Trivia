@@ -256,14 +256,16 @@ def send_message_to_all(header, label, data, except_id=-1):
 
     for c in clients.values():
         if c.id != except_id and c.player_data.disconnected == False:
-       
+        
             c.socket.sendall(pickle.dumps(message))
             if sent == False:
-                sent == True
+                sent = True
 
     if sent:
+   
         to_console = str(data)[:10] + "..."
         print("....sending message to all clients:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
+
 
 #### Send an update to all clients about a specific Player
 def send_player_update_to_all(update, player_data, serialize=False):
@@ -304,6 +306,7 @@ def parse_data_req(client, current_state, request, send_to_all=False):
                 current_state = "HOST_FOUND"
              
                 send_Host_To_All_Clients(host)
+              
             elif current_state == "START_GAME":
                 send_Start_Game_To_All_Clients()
 
@@ -504,114 +507,113 @@ if __name__ == "__main__":
             data_type = tokens[1]
             request = tokens[2]
 
-            if request != "game_state":
-                current_state = parse_data_req(client, current_state, request)
-            # TODO: separate game_state parser after testing is done
-            else:
-                all_players = get_all_players()
+            
+            current_state = parse_data_req(client, current_state, request)
+         
+            all_players = get_all_players()
 
-                #PRINTING FOR TESTING - REMOVE IF NEEDED
-                print("------Who HAS the lock (for testing)---------------\n")
-                print((f"#1: {all_players[0].has_lock}\n"))
-                print((f"#2: {all_players[1].has_lock}\n"))
-                print((f"#3: {all_players[2].has_lock}\n"))
-                print("=====================\n")
-                last_state = current_state
-                current_state = game_state.get_state(all_players, last_state)
-
-
-                if current_state == "SENDING_QUESTION":
-                    pass
-                    #TODO: Send latest question to all clients
-
-                elif current_state == "WAITING_FOR_BUZZ":
-
-                    #this sets everyone's recieved_question variable back to false
-                    clear_received_question()
+            #PRINTING FOR TESTING - REMOVE IF NEEDED
+            print("------Who HAS the lock (for testing)---------------\n")
+            print((f"#1: {all_players[0].has_lock}\n"))
+            print((f"#2: {all_players[1].has_lock}\n"))
+            print((f"#3: {all_players[2].has_lock}\n"))
+            print("=====================\n")
+            last_state = current_state
+            current_state = game_state.get_state(all_players, last_state)
 
 
-                elif current_state == "WAITING_FOR_ANSWER":
+            if current_state == "SENDING_QUESTION":
+                pass
+                #TODO: Send latest question to all clients
 
-                    #remove this when timer stuff gets added
+            elif current_state == "WAITING_FOR_BUZZ":
 
-                    if(answer_came):
-                        current_state = "GOT_ANSWER"
-                        answer_came = False
-                    else:
-                        current_state = "WAITING_FOR_ANSWER"
-
-
-                elif current_state == "WAITING_FOR_HOSTS_CHOICE":
-
-                    #host_voted gets updated when a host_vote token is parsed
-                    if(host_voted == False):
-                        current_state = "WAITING_FOR_HOSTS_CHOICE"
-                    else:
-                        current_state = "GOT_HOST_CHOICE"
-                        host_voted = False
-
-                elif current_state == "GOT_HOST_CHOICE":
-
-                    #give_player_point variable is changed by the host_choice function which Tony is working on
-                    if(give_player_point == False):
-                        give_player_point = False
-                        host_voted = False
-                        answer_came = False
-
-                        index = 1
-
-                        #goes through all players and takes away lock from player who buzzed without giving them a point
-                        #because host said their answer was wrong
-                        for p in all_players:
-
-                            if clients[index].player_data.has_lock == True:
-                                clients[index].player_data.has_lock = False
-
-                            index += 1
+                #this sets everyone's recieved_question variable back to false
+                clear_received_question()
 
 
-                        current_state = "WAITING_FOR_BUZZ"
+            elif current_state == "WAITING_FOR_ANSWER":
 
-                        print("------AFTER THE HOST HAS CHOSEN (should all be false)---------------\n")
-                        print((f"#1: {all_players[0].has_lock}\n"))
-                        print((f"#2: {all_players[1].has_lock}\n"))
-                        print((f"#3: {all_players[2].has_lock}\n"))
-                        print("=====================\n")
+                #remove this when timer stuff gets added
 
-                    else:
-
-                        index = 1
-                        #goes through all players and takes away lock from player who buzzed but also give them a point
-                        for p in all_players:
-
-                            if clients[index].player_data.has_lock == True:
-                                clients[index].player_data.has_lock == False
-                                give_player_point = False
-                                host_voted = False
-                                answer_came = False
-                                clients[index].player_data.increaseScore()
-                            index += 1
-
-                        #once a player gets the question right the server moves on to sending the next question
-                        current_state = "SENDING_QUESTION"
-
-                        #if someone has more than 5 points the the game ends
-                        if(game_state.has_someone_won(all_players)):
-                            current_state = "GAME_OVER"
-
-                elif current_state == "GAME_OVER":
-                    pass
-                    #TODO: send everyone a message telling each client the game is over
-                    #TODO: send everyoen the all_players list so each client can find out each persons score
-                    #TODO: might send everyone which player id won
-
-                elif current_state == "ENDING_GAME":
-
-                    #TODO: start shutting down threads
-                    break
+                if(answer_came):
+                    current_state = "GOT_ANSWER"
+                    answer_came = False
+                else:
+                    current_state = "WAITING_FOR_ANSWER"
 
 
-                send_message_to_client(client, "Send_Data", "game_state", current_state) 
+            elif current_state == "WAITING_FOR_HOSTS_CHOICE":
+
+                #host_voted gets updated when a host_vote token is parsed
+                if(host_voted == False):
+                    current_state = "WAITING_FOR_HOSTS_CHOICE"
+                else:
+                    current_state = "GOT_HOST_CHOICE"
+                    host_voted = False
+
+            elif current_state == "GOT_HOST_CHOICE":
+
+                #give_player_point variable is changed by the host_choice function which Tony is working on
+                if(give_player_point == False):
+                    give_player_point = False
+                    host_voted = False
+                    answer_came = False
+
+                    index = 1
+
+                    #goes through all players and takes away lock from player who buzzed without giving them a point
+                    #because host said their answer was wrong
+                    for p in all_players:
+
+                        if clients[index].player_data.has_lock == True:
+                            clients[index].player_data.has_lock = False
+
+                        index += 1
+
+
+                    current_state = "WAITING_FOR_BUZZ"
+
+                    print("------AFTER THE HOST HAS CHOSEN (should all be false)---------------\n")
+                    print((f"#1: {all_players[0].has_lock}\n"))
+                    print((f"#2: {all_players[1].has_lock}\n"))
+                    print((f"#3: {all_players[2].has_lock}\n"))
+                    print("=====================\n")
+
+                else:
+
+                    index = 1
+                    #goes through all players and takes away lock from player who buzzed but also give them a point
+                    for p in all_players:
+
+                        if clients[index].player_data.has_lock == True:
+                            clients[index].player_data.has_lock == False
+                            give_player_point = False
+                            host_voted = False
+                            answer_came = False
+                            clients[index].player_data.increaseScore()
+                        index += 1
+
+                    #once a player gets the question right the server moves on to sending the next question
+                    current_state = "SENDING_QUESTION"
+
+                    #if someone has more than 5 points the the game ends
+                    if(game_state.has_someone_won(all_players)):
+                        current_state = "GAME_OVER"
+
+            elif current_state == "GAME_OVER":
+                pass
+                #TODO: send everyone a message telling each client the game is over
+                #TODO: send everyoen the all_players list so each client can find out each persons score
+                #TODO: might send everyone which player id won
+
+            elif current_state == "ENDING_GAME":
+
+                #TODO: start shutting down threads
+                break
+
+
+            send_message_to_client(client, "Send_Data", "game_state", current_state) 
 
                 # send_data_to_client(client, data_type, current_state)
 
