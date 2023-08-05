@@ -3,7 +3,7 @@ import time
 import pickle
 import streamlit as st
 from queue import Empty
-"""from src.st_notifier import notify, streamlit_loop 
+from src.st_notifier import notify, streamlit_loop 
 from src import client_messages
 
 
@@ -42,7 +42,8 @@ def update_queue(message_queue):
 
         # Refresh app + message queue every 0.1 seconds
         time.sleep(.1)
-        streamlit_loop.call_soon_threadsafe(notify)
+        if streamlit_loop:
+            streamlit_loop.call_soon_threadsafe(notify)
 
 # Close and delete socket when Server disconnects
 def server_disconnect():
@@ -50,7 +51,8 @@ def server_disconnect():
     st.session_state.my_socket.close()
     del st.session_state.my_socket
     time.sleep(.1)
-    streamlit_loop.call_soon_threadsafe(notify)
+    if streamlit_loop:
+        streamlit_loop.call_soon_threadsafe(notify)
 
 def req_data_from_server(s, request):
     message = f"Req_Data-String-{request}\n" 
@@ -75,7 +77,7 @@ def parse_message(message):
 def req_data_string(s, string):
     message = f"Req_Data-String-{string}\n" 
     print(f"...sending message to server: {message}")
-    s.send(message.encode('utf8')) """
+    s.send(message.encode('utf8'))
 
 def ready_up_test():
     HOST = "127.0.0.1"
