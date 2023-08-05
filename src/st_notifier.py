@@ -12,7 +12,8 @@ def get_browser_session_id() -> str:
         ctx = get_script_run_ctx()
         return ctx.session_id
     except Exception as e:
-        raise Exception("Could not get browser session id") from e
+        return None
+        # raise Exception("Could not get browser session id") from e
         
 def find_streamlit_main_loop() -> asyncio.BaseEventLoop:
     loops = []
@@ -25,10 +26,14 @@ def find_streamlit_main_loop() -> asyncio.BaseEventLoop:
         
     main_thread = next((t for t in threading.enumerate() if t.name == 'MainThread'), None)
     if main_thread is None:
-        raise Exception("No main thread")
+        # raise Exception("No main thread")
+        print("No main thread, st_notifier.py")
+        return None
     main_loop = next((lp for lp in loops if lp._thread_id == main_thread.ident), None) # type: ignore
     if main_loop is None:
-        raise Exception("No event loop on 'MainThread'")
+        # raise Exception("No event loop on 'MainThread'")
+        print("No event loop, st_notifier.py")
+        return None
     
     return main_loop
     
@@ -40,7 +45,8 @@ def get_streamlit_session(session_id: str) -> AppSession:
         if s.session.id == session_id
     ), None)
     if session is None:
-        raise Exception(f"Streamlit session not found for {session_id}")
+        # raise Exception(f"Streamlit session not found for {session_id}")
+        return None
     return session
 
 # This is it!
