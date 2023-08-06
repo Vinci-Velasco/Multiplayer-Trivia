@@ -13,7 +13,7 @@ from game import lobby_state, game_state
 HOST = "127.0.0.1"
 PORT = 7070
 
-clients = {} # key: id - value: Client 
+clients = {} # key: id - value: Client
 
 
 # Thread that deals with listening to clients
@@ -42,7 +42,7 @@ def listening_thread(client_socket, addr, message_queue):
                         if m != "":
                             message_queue.put((m, addr))
                     print(f"Recieved message from {addr}: {message}\n")
-         
+
 # Custom thread class that creates new threads once connections come in
 class Recieve_Connection_Thread(threading.Thread):
     def __init__(self, server, message_queue):
@@ -106,7 +106,7 @@ def disconnect_client(client_socket):
         if c.socket == client_socket:
             target = c
             break
-    
+
     if target != None:
         # client_sockets.remove(client_socket)
         # client_addrs.remove(target.addr)
@@ -190,9 +190,11 @@ def try_to_grab_buzz_lock(sender_id, time_thread):
 
         #if anyone else has the lock DO NOT GIVE THE CALLING SENDER THE LOCK
         if(p.has_lock == True and p.id != clients[sender_id].player_data.id):
+            print(f"Buzzing denied for player{sender_id}")
             return False
 
     clients[sender_id].player_data.has_lock = True
+    send_message_to_all("Send_Data", "Buzzing", sender_id)
 
     time_thread.start()
 
@@ -216,7 +218,7 @@ def load_question_bank():
 
 # Returns who the host is if they have been selected, None otherwise
 def get_host():
-    for client in clients:
+    for client in clients.values():
         if client.player_data.is_host:
             return client
 
@@ -224,21 +226,6 @@ def get_host():
 
 #Token functions-------------------------------------------------------------------------------------
 
-## TODO: Deprecated, don't use this
-def send_data_to_client(client, data_type, data):
-    # if client disconnected, don't do anything
-    if client.socket.fileno() == -1:
-        return
-    
-    # Encode String before sending
-    if data_type == "String":
-        print(f"....sending string to Client {client.id}: {data}")
-        client.socket.send(str(data).encode('utf8'))
-
-    elif data_type == "Object":
-        print(f"....sending Object to Client {client.id}: {data}")
-        data_object = pickle.dumps(data)
-        client.socket.send(data_object)
 
 #### Send message to client with header and label that describes the data
 def send_message_to_client(client, header, label, data):
@@ -256,13 +243,13 @@ def send_message_to_all(header, label, data, except_id=-1):
 
     for c in clients.values():
         if c.id != except_id and c.player_data.disconnected == False:
-        
+
             c.socket.sendall(pickle.dumps(message))
             if sent == False:
                 sent = True
 
     if sent:
-   
+
         to_console = str(data)[:10] + "..."
         print("....sending message to all clients:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
 
@@ -299,14 +286,14 @@ def parse_data_req(client, current_state, request, send_to_all=False):
             all_players = get_all_players()
             last_state = current_state
             current_state = lobby_state.get_state(all_players, last_state)
-            
+
             if current_state == "FIND_HOST":
                 host = lobby_state.calculate_host(all_players)
                 clients[host.id].player_data.is_host = True
                 current_state = "HOST_FOUND"
-             
+
                 send_Host_To_All_Clients(host)
-              
+
             elif current_state == "START_GAME":
                 send_Start_Game_To_All_Clients()
 
@@ -314,14 +301,14 @@ def parse_data_req(client, current_state, request, send_to_all=False):
                 #send_data_to_client(client, data_type, current_state)
 
             data = current_state
-          
-    
+
+
     # Serialize data if needed
     if serialize == True:
         data = pickle.dumps(data)
-    
-    if send_to_all == True: 
-        send_message_to_all("Send_Data", request, data) 
+
+    if send_to_all == True:
+        send_message_to_all("Send_Data", request, data)
     else:
         send_message_to_client(client, "Send_Data", request, data)
 
@@ -332,7 +319,7 @@ def send_Host_To_All_Clients(host):
     send_message_to_all("Send_Data", "host_id", host.id)
 
 def send_Start_Game_To_All_Clients():
-   
+
     send_message_to_all("Send_Data", "lobby_state", "START_GAME")
 
 def hostChoice():
@@ -352,6 +339,7 @@ def voteHost():
 def answer(sender_id, event, message):
     # ensure if the person who sent the answer token actually has the lock
     if sender_id != get_playerid_who_has_lock():
+        print(f"Answer from {sender_id} rejected")
         return False
 
     # send answer to host
@@ -452,7 +440,10 @@ if __name__ == "__main__":
     #Token Parse------------------------------------------------------------------
 
     # close ability to connect
+<<<<<<< HEAD
    
+=======
+>>>>>>> ccb80637a517ac6bbe52fbe4a5667d873f94f81d
     recieve_connections_thread.stop()
     recieve_connections_thread.join()
 
@@ -478,24 +469,26 @@ if __name__ == "__main__":
         if len(question_bank) == 0:
             break
 
-        #send_question(question_bank)
         message, addr = message_queue.get()
         print(message)
 
         #enter if the answer timer ran out and someone actually buzzed in
         if message == "Timeout" and get_playerid_who_has_lock() is not None:
-            buzz_lock = None
 
-            # TODO: didnt change this to the new send_message_to_client yet cus idk what the purpose is
-            for client_id in clients:
-                send_data_to_client(clients[client_id], "String", "Timeout")
+            send_message_to_all("Send_Data", "Timeout", "timeout occured")
 
-            #player who has lock loses it 
+            #player who has lock loses it
             clients[get_playerid_who_has_lock()].player_data.has_lock = False
 
             #we go back to buzzing stage to so others can get a chance to buzz
             print("Back to buzz!")
             current_state = "WAITING_FOR_BUZZ"
+
+            event = threading.Event()
+            time_thread = threading.Thread(target=buzz_timer, args=(message_queue,))
+
+            continue # needed because addr does not exist from message_queue.get() from the timer thread.
+
 
         #### Information about the Sender
         sender_id = PlayerNumber[addr][0]
@@ -510,10 +503,16 @@ if __name__ == "__main__":
             data_type = tokens[1]
             request = tokens[2]
 
+<<<<<<< HEAD
             
             #current_state = parse_data_req(client, current_state, request)
             if(request == "lobby_state"):
                 continue
+=======
+
+            current_state = parse_data_req(client, current_state, request)
+
+>>>>>>> ccb80637a517ac6bbe52fbe4a5667d873f94f81d
             all_players = get_all_players()
 
             #PRINTING FOR TESTING - REMOVE IF NEEDED
@@ -527,8 +526,7 @@ if __name__ == "__main__":
 
 
             if current_state == "SENDING_QUESTION":
-                pass
-                #TODO: Send latest question to all clients
+                send_question(question_bank)
 
             elif current_state == "WAITING_FOR_BUZZ":
 
@@ -617,7 +615,7 @@ if __name__ == "__main__":
                 break
 
 
-            send_message_to_client(client, "Send_Data", "game_state", current_state) 
+            send_message_to_client(client, "Send_Data", "game_state", current_state)
 
                 # send_data_to_client(client, data_type, current_state)
 
@@ -629,7 +627,7 @@ if __name__ == "__main__":
            try_to_grab_buzz_lock(sender_id, time_thread)
 
         elif (tokens[0] == "Host_Choice"):
-           
+
             host_voted = True
 
             if(tokens[1] == "Y"):
@@ -648,6 +646,6 @@ if __name__ == "__main__":
 
             #whoever sends this must have their player.received_question set to true and will be changed once the waiting for buzz state is entered
             received_question_confirmation(sender_id)
-    
+
 
         #Token Parse------------------------------------------------------------------
