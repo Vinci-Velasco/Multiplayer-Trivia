@@ -29,7 +29,7 @@ def init(s):
 def vote_callback(id):
     s = st.session_state.my_socket
     s.send(f"Vote_Host-{id}".encode('utf8'))
-    #st.session_state.i_voted = True
+    # st.session_state.i_voted = True
 
 def ready_callback():
     st.session_state.total_ready += 1
@@ -46,7 +46,6 @@ def main():
     if 'lobby_start' not in st.session_state:
         init(st.session_state.my_socket)
     else:
-
         players = st.session_state.players
 
         if not st.session_state.i_voted:
