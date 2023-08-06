@@ -367,7 +367,7 @@ def send_question(question_bank):
     send_message_to_all("Send_Data", "Question", q_data)
 
     # avoid repeat questions
-    question_bank["questions"].remove(selected_question)
+    #question_bank["questions"].remove(selected_question)
 
 
 def buzzing():

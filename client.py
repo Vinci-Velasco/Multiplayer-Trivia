@@ -186,15 +186,24 @@ def ready_up_test():
     print("left lobby loop\n")
     buzzedIn = False
     answered = False
+    question = ""
+    answer = ""
     while True:
 
-       # time.sleep(2)
+        #time.sleep(2)
         message = message_queue.get()
-        print(str(message['data'])[:20])
+        
         my_socket.send("Req_Data-String-game_state".encode("utf8"))
 
-        if(str(message['data'])[:20] == "SENDING_QUESTION"):
-                print("sending recieved question\n")
+        if(str(message['label'])[:20] == "Question"):
+                
+               
+                questionInfo = (pickle.loads(message['data']))
+
+                question = str(questionInfo.question)
+                answer = str(questionInfo.answer)
+                
+             
                 my_socket.send("Received_Question-NA".encode("utf8"))
 
 
@@ -224,10 +233,15 @@ def ready_up_test():
                     
 
 
-        print(str(message['data'])[:20])
+        
         if(str(message['header'])[:20] == "Host_Verify"):
 
             if(host_id == my_id):
+                print(f"Question: {str(question)}\n")
+                print(f"Answer: {str(answer)}\n")
+                print("Given Answer: ")
+                print(str(message['data'])[:20])
+                print("\n")
                 userTestInput = input("You are the host: is the answer correct or not? ('y' or 'n'): ")
                 if(userTestInput == "y"):
                     my_socket.send("Host_Choice-Y".encode("utf8"))
