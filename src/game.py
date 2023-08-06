@@ -2,11 +2,11 @@ import random
 import time
 import streamlit as st
 from src.question_bank import *
+from src import gui
 
 cols = {}
 
 def init():
-    # TODO: server should actually handle question bank but hardcode here for now
     if 'qb' not in st.session_state:
        st.session_state.qb = qb_from_json()
 
@@ -25,17 +25,6 @@ def init():
 
     st.session_state.my_turn = True
 
-def draw_cols():
-    global cols
-    c1, c2, c3 = st.columns(3, gap="large")
-    cols = { 1: c1, 2: c2, 3: c3}
-
-    if st.session_state.buzzer_phase:
-        cols[2].button('Buzzer', on_click=buzzer_callback, use_container_width=True)
-    elif st.session_state.answer_phase:
-        player_turn()
-    elif st.session_state.host_phase:
-        host_turn()
 
 def buzzer_callback():
     st.session_state.buzzer_phase = False
@@ -90,7 +79,7 @@ def main():
     question = st.session_state.current_question
     st.header(f"Q{question.id}. {question.question}")
     
-    draw_cols()
+    gui.draw_game(buzzer_callback))
 
 if __name__ == '__main__':
     main()

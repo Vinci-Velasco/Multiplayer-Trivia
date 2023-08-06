@@ -74,10 +74,14 @@ def draw_lobby(cols, players, vote_callback, ready_callback):
 
     return cols
 
-def get_total_ready(player_list):
-    total_ready = 0
-    for p in player_list:
-        if p.readied_up:
-            total_ready += 1
+def draw_game(buzzer_callback):
+    global cols
+    c1, c2, c3 = st.columns(3, gap="large")
+    cols = { 1: c1, 2: c2, 3: c3}
 
-    return total_ready
+    if st.session_state.buzzer_phase:
+        cols[2].button('Buzzer', on_click=buzzer_callback, use_container_width=True)
+    elif st.session_state.answer_phase:
+        player_turn()
+    elif st.session_state.host_phase:
+        host_turn()

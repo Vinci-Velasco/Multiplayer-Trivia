@@ -72,6 +72,9 @@ def update_data(label, data):
         
     elif label == "lobby_state":
         update_lobby_state(data)
+    
+    elif label == "game_state":
+        update_game_state(data)
 
     elif label == "host_id":
         if 'host_id' not in st.session_state:
@@ -97,6 +100,13 @@ def update_data(label, data):
             st.session_state.ready_up = True
     else:
         print(f"Error! received unrecognized Send_Data label: {label}")
+    
+def update_game_state(game_state):
+    if game_state == "SENDING_QUESTION":
+        pass
+
+    st.session_state.game_state = game_state
+
 
 #### handle current Lobby State, e.g. if we are in Voting phase or Ready Up phase...
 def update_lobby_state(lobby_state):
@@ -124,5 +134,9 @@ def update_lobby_state(lobby_state):
             st.session_state.ready_up = True
     elif lobby_state == "START_GAME":
         st.session_state.ready_up_over = True
+
+    elif lobby_state == "SENDING_QUESTION":
+        update_game_state(lobby_state) 
+        pass
 
     st.session_state.lobby_state = lobby_state
