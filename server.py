@@ -10,7 +10,7 @@ from src.question_bank import Question
 from game import lobby_state, game_state
 
 HOST = "127.0.0.1"
-PORT = 7076
+PORT = 7070
 
 clients = {} # key: id - value: Client 
 
@@ -195,12 +195,12 @@ def send_data_to_client(client, data_type, data):
     # Encode String before sending
     if data_type == "String":
         print(f"....sending string to Client {client.id}: {data}")
-        client.socket.send(str(data).encode('utf8'))
+        client.socket.sendall(str(data).encode('utf8'))
 
     elif data_type == "Object":
         print(f"....sending Object to Client {client.id}: {data}")
         data_object = pickle.dumps(data)
-        client.socket.send(data_object)
+        client.socket.sendall(data_object)
 
 #### Send message to client with header and label that describes the data
 def send_message_to_client(client, header, label, data):
@@ -219,8 +219,10 @@ def send_message_to_all(header, label, data, except_id=-1):
     for c in clients.values():
         if c.id != except_id and c.player_data.disconnected == False:
             c.socket.sendall(pickle.dumps(message))
+            to_console = str(data)[:10] + "..."
+            print(f"....sending message to Client from all {c.id}:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
             if sent == False:
-                sent == True
+                sent = True
 
     if sent:
         to_console = str(data)[:10] + "..."
@@ -246,7 +248,6 @@ def send_state_update(state_type, state_data, serialize=False, to_all=False, cli
         data = pickle.dumps(state_data)
     else:
         data = state_data
-
     if to_all == True:
         send_message_to_all(header, label, data)
     elif client != None:
@@ -273,7 +274,7 @@ def parse_data_req(client, request, send_to_all=False):
         print("lobby_state: getting state")
         lobby_state = lobby.get_state()
         print(f"lobby_state: sending state to all -> {lobby_state}")
-        send_state_update("Lobby", lobby_state, to_all=False, client=client)
+        send_state_update("Lobby", lobby_state, to_all=True)
         return 
     
     # Serialize data if needed
@@ -286,7 +287,8 @@ def parse_data_req(client, request, send_to_all=False):
         send_message_to_client(client, "Send_Data", request, data)
 
 def send_Host_To_All_Clients(host):
-    send_message_to_all(f"Send_Data-host_id-{host.id}")
+    send_message_to_all("Send_Data", "host_id", host.id)
+    # send_message_to_all(f"Send_Data-host_id-{host.id}")
 
 def send_Start_Game_To_All_Clients():
     for client in clients.values():
@@ -390,18 +392,22 @@ if __name__ == "__main__":
 
         elif (tokens[0] == "Ready_Up"):
             clients[sender_id].player_data.readied_up = True
+            send_player_update_to_all("Readied_Up", client.id)
         
         #### Update internal Lobby State
         lobby.update_players(player_list=get_all_players())
         current_state = lobby.get_state()
-        if lobby.state_changed():
-            send_state_update("Lobby", current_state, to_all=True)
+        
         # Additionally calculate host and broadcast to all clients
         if  current_state == "FIND_HOST" and lobby.host_found() == False:
             host = lobby.calculate_host()
             send_Host_To_All_Clients(host)
-            lobby.update_state("FOUND_HOST")
+            lobby.update_state("HOST_FOUND")
+            # lobby.update_state("READY_UP")
             host_found = True
+        current_state = lobby.get_state()
+        if lobby.state_changed():
+            send_state_update("Lobby", current_state, to_all=True)
 
     #Token Parse------------------------------------------------------------------
 

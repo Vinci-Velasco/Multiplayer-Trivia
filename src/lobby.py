@@ -12,9 +12,7 @@ def start_game():
 #### Initialize data upon first connection
 def init_lobby(s):
     with st.spinner("loading lobby..."):
-        client.req_data_from_server(s, "my_id")
-        client.req_data_from_server(s, "players_in_lobby")
-        client.req_data_from_server(s, "lobby_state")
+        st.session_state.lobby_start = True
 
         if 'my_id' not in st.session_state:
             st.session_state.my_id = -1
@@ -26,10 +24,13 @@ def init_lobby(s):
             pass
         if "lobby_state" not in st.session_state:
             st.session_state.lobby_state = "WAIT"
-        else:
-            st.session_state.i_voted = False
-            st.session_state.im_ready = False
-            st.session_state.lobby_start = True
+        # else:
+        st.session_state.i_voted = False
+        st.session_state.im_ready = False
+            # st.session_state.lobby_start = True
+        client.req_data_from_server(s, "my_id")
+        client.req_data_from_server(s, "players_in_lobby")
+        client.req_data_from_server(s, "lobby_state")
 
 # Send Vote to server when vote button is clicked
 def vote_callback(vote_id):
@@ -51,7 +52,7 @@ def main():
         players = st.session_state.players
         lobby_state = st.session_state.lobby_state
 
-        if not st.session_state.i_voted:
+        if not st.session_state.i_voted and hasattr(st.session_state, "my_player"):
             st.session_state.i_voted = st.session_state.my_player.already_voted
 
         ## Draw GUI

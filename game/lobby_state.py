@@ -2,7 +2,7 @@ import random
 
 #### Application logic for Lobby
 # use list of Players, not Client
-MIN_PLAYERS = 3
+MIN_PLAYERS = 5
 init_state = "WAIT"
 
 class Lobby():
@@ -96,7 +96,7 @@ class Lobby():
     def host_found(self):
         return not (self.host == None)
 
-    def get_total_votes(player_list):
+    def get_total_votes(self, player_list):
         total_votes = 0
         for p in player_list:
             if p.already_voted:
@@ -104,7 +104,7 @@ class Lobby():
 
         return total_votes
     
-    def get_total_ready(player_list):
+    def get_total_ready(self, player_list):
         total_ready = 0
         for p in player_list:
             if p.readied_up:

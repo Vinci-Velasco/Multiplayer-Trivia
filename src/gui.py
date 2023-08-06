@@ -44,7 +44,8 @@ def draw_lobby(cols, players, vote_callback, ready_callback):
             continue
         elif 'ready_up' not in st.session_state:
             # Vote buttons
-            cols[3].button(f'Vote P{p.id}',  disabled=(st.session_state.i_voted or p.disconnected), on_click=(lambda: vote_callback(p.id)), key=f"vote_btn{p.id}")
+            vote_id = p.id + 0
+            cols[3].button(f'Vote P{p.id}',  disabled=(st.session_state.i_voted or p.disconnected), on_click=vote_callback, args=(vote_id,), key=f"vote_btn{p.id}")
         elif p.is_me:
             # Ready Up buttons
             cols[3].button('Ready', on_click=ready_callback)

@@ -21,28 +21,30 @@ def listening_thread(sock, message_queue):
             to_console = "{ header: " + message['header'] + ", label: " + message['label'] + ", data: " + str(message['data'])[:10] + "... }"
             print(f"Received message from server: {to_console}\n")
             message_queue.put(message)
-            update_queue(message_queue)
+            # update_queue(message_queue)
         except Exception:
+            print("uhhh this shouldnt happen")
             break
         else:
             print(f"Received a string from server: {message}\n")
             for m in message.split("\n"):
                 if m != "":
                     message_queue.put(m)
-            update_queue(message_queue)
+            # update_queue(message_queue)
     
 #### Runs each time a new message arrives from the server to update the front-end
 def update_queue(message_queue):
-    try:
-        message = message_queue.get(block=False)
-    except Empty as e:
-        raise Exception('error, queue is empty. did server disconnect?') from e
-    else:
-        parse_message(message)
+    while True:
+        try:
+            message = message_queue.get(block=True)
+        except Empty as e:
+            raise Exception('error, queue is empty. did server disconnect?') from e
+        else:
+            parse_message(message)
 
-        # Refresh app + message queue every 0.1 seconds
-        time.sleep(.1)
-        streamlit_loop.call_soon_threadsafe(notify)
+            # Refresh app + message queue every 0.1 seconds
+            time.sleep(.1)
+            streamlit_loop.call_soon_threadsafe(notify)
 
 # Close and delete socket when Server disconnects
 def server_disconnect():
@@ -84,6 +86,8 @@ def parse_message(message):
             client_messages.update_lobby_state(state_data)
         elif label == "Game" and 'game_start' in st.session_state:
             client_messages.update_game_state(state_data)
+    else:
+        print("LOL FAIL")
 
 #### Data Strings need to be decoded with utf8
 def req_data_string(s, string):
@@ -101,7 +105,7 @@ def ready_up_test():
         host_id = 0
 
         my_socket.send("Req_Data-String-my_id".encode("utf8"))
-        my_id = my_socket.recv(BUFFER_SIZE).decode("utf8")
+        my_id = my_socket.recv(BUFFER_SIZE).decode("utf8") # shouldnt follow this format anymore
 
         print(f"You are player: {my_id}")
 
