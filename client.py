@@ -128,6 +128,7 @@ def ready_up_test():
     
     while True:
       
+        
       
         isString = False
         
@@ -183,8 +184,11 @@ def ready_up_test():
         index += 1
 
     print("left lobby loop\n")
+    buzzedIn = False
+    answered = False
     while True:
 
+       # time.sleep(2)
         message = message_queue.get()
         print(str(message['data'])[:20])
         my_socket.send("Req_Data-String-game_state".encode("utf8"))
@@ -198,12 +202,30 @@ def ready_up_test():
 
             if(host_id != my_id):
 
-                userTestInput = input("Would you like to buzz in? ('y' or 'n'): ")
-                if(userTestInput == "y"):
-                    my_socket.send("Buzzing-NA".encode("utf8"))
+                if(buzzedIn == False):
+
+                    userTestInput = input("Would you like to buzz in? ('y' or 'n'): ")
+                    if(userTestInput == "y"):
+                        my_socket.send("Buzzing-NA".encode("utf8"))
+                        buzzedIn = True
+
+        if(str(message['data'])[:20] == "WAITING_FOR_ANSWER"):
+
+            if(host_id != my_id and buzzedIn == True and answered == False):
+
+              
+                    userTestInput = input("Would you like to answer?: ")
+                   
+                    my_socket.send(f"Answer-{userTestInput}".encode("utf8"))
+                    answered = True
+                   # break
 
 
-        if(str(message['data'])[:20] == "WAITING_FOR_HOSTS_CHOICE"):
+                    
+
+
+        print(str(message['data'])[:20])
+        if(str(message['header'])[:20] == "Host_Verify"):
 
             if(host_id == my_id):
                 userTestInput = input("You are the host: is the answer correct or not? ('y' or 'n'): ")

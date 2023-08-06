@@ -440,14 +440,11 @@ if __name__ == "__main__":
     #Token Parse------------------------------------------------------------------
 
     # close ability to connect
-<<<<<<< HEAD
    
-=======
->>>>>>> ccb80637a517ac6bbe52fbe4a5667d873f94f81d
     recieve_connections_thread.stop()
     recieve_connections_thread.join()
 
-    print("flksdjf;lksaj;fkljas;fkljs;akljf;asjklf;kljas;kf;klsjf;\n")
+
 
     # send info to clients that main game has started
     # ...
@@ -462,6 +459,7 @@ if __name__ == "__main__":
     host_voted = False
     answer_came = False
     give_player_point = False
+    new_question = False
     current_state = "SENDING_QUESTION"
     while game_loop:
 
@@ -503,16 +501,10 @@ if __name__ == "__main__":
             data_type = tokens[1]
             request = tokens[2]
 
-<<<<<<< HEAD
             
             #current_state = parse_data_req(client, current_state, request)
             if(request == "lobby_state"):
                 continue
-=======
-
-            current_state = parse_data_req(client, current_state, request)
-
->>>>>>> ccb80637a517ac6bbe52fbe4a5667d873f94f81d
             all_players = get_all_players()
 
             #PRINTING FOR TESTING - REMOVE IF NEEDED
@@ -558,6 +550,7 @@ if __name__ == "__main__":
 
                 #give_player_point variable is changed by the host_choice function which Tony is working on
                 if(give_player_point == False):
+                    new_question = False
                     give_player_point = False
                     host_voted = False
                     answer_came = False
@@ -593,6 +586,7 @@ if __name__ == "__main__":
                             give_player_point = False
                             host_voted = False
                             answer_came = False
+                            new_question = True
                             clients[index].player_data.increaseScore()
                         index += 1
 
