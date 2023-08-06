@@ -11,7 +11,7 @@ from src.question_bank import Question
 from game import lobby_state, game_state
 
 HOST = "127.0.0.1"
-PORT = 7070
+PORT = 7072
 
 clients = {} # key: id - value: Client
 
@@ -108,10 +108,6 @@ def disconnect_client(client_socket):
             break
 
     if target != None:
-        # client_sockets.remove(client_socket)
-        # client_addrs.remove(target.addr)
-        # del PlayerNumber[target.addr]
-        # del clients[target.id]
         target.player_data.disconnected = True
         client_socket.close()
 
@@ -245,6 +241,8 @@ def send_message_to_all(header, label, data, except_id=-1):
         if c.id != except_id and c.player_data.disconnected == False:
 
             c.socket.sendall(pickle.dumps(message))
+            to_console = str(data)[:10] + "..."
+            print(f"....sending message to Client from all {c.id}:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
             if sent == False:
                 sent = True
 
@@ -266,8 +264,21 @@ def send_player_update_to_all(update, player_data, serialize=False):
 
     send_message_to_all(header, label, data)
 
+def send_state_update(state_type, state_data, serialize=False, to_all=False, client=None):
+    header = "State_Update"
+    label = state_type #e.g. Lobby, Game
+
+    if serialize == True:
+        data = pickle.dumps(state_data)
+    else:
+        data = state_data
+    if to_all == True:
+        send_message_to_all(header, label, data)
+    elif client != None:
+        send_message_to_client(client, header, label, data)
+
 #### Handle requests for server data, send back a response containing the requested data
-def parse_data_req(client, current_state, request, send_to_all=False):
+def parse_data_req(client, request, send_to_all=False):
     data = None
     serialize = False
 
@@ -283,26 +294,13 @@ def parse_data_req(client, current_state, request, send_to_all=False):
         serialize = True
 
     elif request == "lobby_state":
-            all_players = get_all_players()
-            last_state = current_state
-            current_state = lobby_state.get_state(all_players, last_state)
-
-            if current_state == "FIND_HOST":
-                host = lobby_state.calculate_host(all_players)
-                clients[host.id].player_data.is_host = True
-                current_state = "HOST_FOUND"
-
-                send_Host_To_All_Clients(host)
-
-            elif current_state == "START_GAME":
-                send_Start_Game_To_All_Clients()
-
-                #if you send both of these together then the messages are received as one
-                #send_data_to_client(client, data_type, current_state)
-
-            data = current_state
-
-
+        lobby.update_players(player_list=get_all_players())
+        print("lobby_state: getting state")
+        lobby_state = lobby.get_state()
+        print(f"lobby_state: sending state to all -> {lobby_state}")
+        send_state_update("Lobby", lobby_state, to_all=True)
+        return 
+    
     # Serialize data if needed
     if serialize == True:
         data = pickle.dumps(data)
@@ -312,14 +310,10 @@ def parse_data_req(client, current_state, request, send_to_all=False):
     else:
         send_message_to_client(client, "Send_Data", request, data)
 
-    return current_state
-
 def send_Host_To_All_Clients(host):
-
     send_message_to_all("Send_Data", "host_id", host.id)
 
 def send_Start_Game_To_All_Clients():
-
     send_message_to_all("Send_Data", "lobby_state", "START_GAME")
 
 def hostChoice():
@@ -404,9 +398,12 @@ if __name__ == "__main__":
     #### Lobby loop ------------------------------------------------------------------
     host_found = False
     all_ready = False
+
     #### Internal Lobby states and values
     host = None
-    current_state = "WAIT"
+    total_votes = 0
+    lobby = lobby_state.Lobby(player_list=get_all_players())
+
     while not (all_ready and host_found):
         #gets the message and its coresponding sender adderess
         message, addr = message_queue.get()
@@ -415,16 +412,13 @@ if __name__ == "__main__":
         sender_id = PlayerNumber[addr][0]
         client = clients[sender_id]
 
-        #### Internal Lobby states and values
-        total_votes = 0
-
         #### application layer protocol for lobby (Parse Tokens)
         tokens = message.split('-')
 
         if (tokens[0] == "Req_Data"):
             data_type = tokens[1]
             request = tokens[2]
-            current_state = parse_data_req(client, current_state, request)
+            parse_data_req(client, request)
 
         elif (tokens[0] == "Vote_Host"):
             vote_id = int(tokens[1])
@@ -432,6 +426,23 @@ if __name__ == "__main__":
 
         elif (tokens[0] == "Ready_Up"):
             clients[sender_id].player_data.readied_up = True
+            send_player_update_to_all("Readied_Up", client.id)
+        
+        #### Update internal Lobby State
+        lobby.update_players(player_list=get_all_players())
+        current_state = lobby.get_state()
+        
+        # Additionally calculate host and broadcast to all clients
+        if  current_state == "FIND_HOST" and lobby.host_found() == False:
+            host = lobby.calculate_host()
+            global players
+            clients[int(host.id)].player_data.is_host = True
+            send_Host_To_All_Clients(host)
+            lobby.update_state("HOST_FOUND")
+            host_found = True
+        current_state = lobby.get_state()
+        if lobby.state_changed():
+            send_state_update("Lobby", current_state, to_all=True)
 
         if(current_state == "START_GAME"):
            # time.sleep(10)

@@ -7,11 +7,12 @@ import threading
 from queue import Queue
 from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
 
-from client import listening_thread
+from client import listening_thread, update_queue
 
 #### Test connection by pinging the server
 def test_connect(host, port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
     try:
         s.connect((host, port))
         s.send("ping".encode('utf-8'))
@@ -27,7 +28,17 @@ def init_message_queue():
 
     t = threading.Thread(
     target=listening_thread, args=(s, st.session_state.message_queue))
+    
+    # Add thread to Streamlit's application context
+    ctx = get_script_run_ctx()
+    add_script_run_ctx(thread=t, ctx=ctx)
 
+    t.daemon = True
+    t.start()
+
+    t = threading.Thread(
+    target=update_queue, args=(st.session_state.message_queue,))
+    
     # Add thread to Streamlit's application context
     ctx = get_script_run_ctx()
     add_script_run_ctx(thread=t, ctx=ctx)

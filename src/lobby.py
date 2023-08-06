@@ -10,10 +10,9 @@ def start_game():
     st.experimental_rerun()
 
 #### Initialize data upon first connection
-def init(s):
+def init_lobby(s):
     with st.spinner("loading lobby..."):
-        client.req_data_from_server(s, "my_id")
-        client.req_data_from_server(s, "players_in_lobby")
+        st.session_state.lobby_start = True
 
         if 'my_id' not in st.session_state:
             st.session_state.my_id = -1
@@ -21,43 +20,48 @@ def init(s):
             st.session_state.players = {}
             st.session_state.total_votes = 0
             st.session_state.total_ready = 0
-        else:
-            st.session_state.i_voted = False
-            st.session_state.im_ready = False
-            st.session_state.lobby_start = True
+        if 'my_player' not in st.session_state:
+            pass
+        if "lobby_state" not in st.session_state:
+            st.session_state.lobby_state = "INIT"
+        # else:
+        st.session_state.i_voted = False
+        st.session_state.im_ready = False
+        client.req_data_from_server(s, "my_id")
+        client.req_data_from_server(s, "players_in_lobby")
 
-def vote_callback(id):
-    s = st.session_state.my_socket
-    s.send(f"Vote_Host-{id}".encode('utf8'))
-    # st.session_state.i_voted = True
+# Send Vote to server when vote button is clicked
+def vote_callback(vote_id):
+    header = "Vote_Host"
+    data = vote_id
+    client.send_data_to_server(st.session_state.my_socket, header, data)
 
+# Send Ready to server when ready button is clicked
 def ready_callback():
-    st.session_state.total_ready += 1
-
-def find_host():
-    # TODO: get host from server
-    test_host = 1
-    # st.session_state.host_id = 1
-    # if 'vote_over' not in st.session_state:
-    #     # st.session_state.vote_over = True
-    #     st.experimental_rerun()
+    header = "Ready_Up" 
+    data = ""
+    client.send_data_to_server(st.session_state.my_socket, header, data)
 
 def main():
     if 'lobby_start' not in st.session_state:
-        init(st.session_state.my_socket)
+        init_lobby(st.session_state.my_socket)
+    elif 'lobby_state' in st.session_state and st.session_state.lobby_state == "INIT":
+        client.req_data_from_server(st.session_state.my_socket, "lobby_state")
     else:
-        players = st.session_state.players
-
-        if not st.session_state.i_voted:
-            st.session_state.i_voted = st.session_state.my_player.already_voted
-
-        ## Draw GUI
-        global cols
-        draw_lobby(cols, players, vote_callback, ready_callback, find_host)
-
         if 'ready_up_over' in st.session_state:
             start_game()
-        
+        else:
+            players = st.session_state.players
+
+            if not st.session_state.i_voted and hasattr(st.session_state, "my_player"):
+                st.session_state.i_voted = st.session_state.my_player.already_voted
+            if not st.session_state.im_ready and hasattr(st.session_state, "my_player"):
+                st.session_state.im_ready = st.session_state.my_player.readied_up
+
+            ## Draw GUI
+            global cols
+            draw_lobby(cols, players, vote_callback, ready_callback)
+
         st.write(st.session_state)
 
 if __name__ == '__main__':

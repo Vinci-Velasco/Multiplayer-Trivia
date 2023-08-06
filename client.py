@@ -1,9 +1,6 @@
-import socket
 import time
 import pickle
-from threading import Thread
-from queue import Queue
-""""import streamlit as st
+import streamlit as st
 from queue import Empty
 from src.st_notifier import notify, streamlit_loop 
 from src import client_messages
@@ -23,28 +20,29 @@ def listening_thread(sock, message_queue):
             to_console = "{ header: " + message['header'] + ", label: " + message['label'] + ", data: " + str(message['data'])[:10] + "... }"
             print(f"Received message from server: {to_console}\n")
             message_queue.put(message)
-            update_queue(message_queue)
+            # update_queue(message_queue)
         except Exception:
+            print("uhhh this shouldnt happen")
             break
         else:
             print(f"Received a string from server: {message}\n")
             for m in message.split("\n"):
                 if m != "":
                     message_queue.put(m)
-            update_queue(message_queue)
+            # update_queue(message_queue)
     
 #### Runs each time a new message arrives from the server to update the front-end
 def update_queue(message_queue):
-    try:
-        message = message_queue.get(block=False)
-    except Empty as e:
-        raise Exception('error, queue is empty. did server disconnect?') from e
-    else:
-        parse_message(message)
+    while True:
+        try:
+            message = message_queue.get(block=True)
+        except Empty as e:
+            raise Exception('error, queue is empty. did server disconnect?') from e
+        else:
+            parse_message(message)
 
-        # Refresh app + message queue every 0.1 seconds
-        time.sleep(.1)
-        if streamlit_loop:
+            # Refresh app + message queue every 0.1 seconds
+            time.sleep(.1)
             streamlit_loop.call_soon_threadsafe(notify)
 
 # Close and delete socket when Server disconnects
@@ -58,8 +56,13 @@ def server_disconnect():
 
 def req_data_from_server(s, request):
     message = f"Req_Data-String-{request}\n" 
-    print(f"...sending message to server: {message}")
-    s.send(message.encode('utf8'))
+    print(f"...sending message to server: {message}\n")
+    s.sendall(message.encode('utf8'))
+
+def send_data_to_server(s, header, data):
+    message = f"{header}-{data}\n"
+    print(f"...sending message to server: {message}\n")
+    s.sendall(message.encode('utf8'))
 
 #### Parse incoming messages in queue
 def parse_message(message):
@@ -74,46 +77,30 @@ def parse_message(message):
 
         if 'players' in st.session_state:
             client_messages.update_player(update, player_data)
+    
+    elif message['header'] == "State_Update":
+        label = message['label']
+        state_data = message['data']
+
+        if label == "Lobby" and 'lobby_start' in st.session_state:
+            client_messages.update_lobby_state(state_data)
+        elif label == "Game" and 'game_start' in st.session_state:
+            client_messages.update_game_state(state_data)
+    else:
+        print("LOL FAIL")
 
 #### Data Strings need to be decoded with utf8
 def req_data_string(s, string):
     message = f"Req_Data-String-{string}\n" 
-    print(f"...sending message to server: {message}")
-    s.send(message.encode('utf8'))"""
-
-
-def threaded_function(message_queue, my_socket):
-
-    BUFFER_SIZE = 1024
-    while(True):
-
-        try: 
-            recv = my_socket.recv(BUFFER_SIZE)
-            message = recv.decode("utf-8")
-
-        except UnicodeDecodeError: # If decoding doesn't work, message is not a string. Deserialize with pickle
-            message = pickle.loads(recv)
-            to_console = "{ header: " + message['header'] + ", label: " + message['label'] + ", data: " + str(message['data'])[:50] + "... }"
-            #print(f"Received message from server: {to_console}\n")
-            message_queue.put(message)
-        
-
-
+    print(f"...sending message to server: {message}\n")
+    s.sendall(message.encode('utf8'))
 
 def ready_up_test():
     HOST = "127.0.0.1"
     PORT = 7070
 
-    message_queue = Queue()
-    my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    my_socket.connect((HOST, PORT))
- 
-        
-    
-    #------------------------------------------------------
-    thread = Thread(target = threaded_function, args = (message_queue, my_socket))
-    thread.start()
-    #----------------------------------------------------
+    my_socket.send("Req_Data-String-my_id".encode("utf8"))
+    my_id = my_socket.recv(BUFFER_SIZE).decode("utf8") # shouldnt follow this format anymore
 
     
     my_id = 0
