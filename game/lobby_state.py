@@ -2,14 +2,13 @@ import random
 
 #### Application logic for Lobby
 # use list of Players, not Client
-MIN_PLAYERS = 5
-init_state = "WAIT"
+MIN_PLAYERS = 2
 
 class Lobby():
     def __init__(self, player_list=[]):
         self.player_list = player_list
-        self.current_state = init_state
-        self.last_state = init_state
+        self.current_state = "WAIT"
+        self.last_state = "WAIT"
 
         self.host = None
     
@@ -91,6 +90,7 @@ class Lobby():
                     host = random.choice(tempList)
                     tempList.clear()
             self.host = host
+
             return host
     
     def host_found(self):

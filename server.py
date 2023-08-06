@@ -11,7 +11,7 @@ from src.question_bank import Question
 from game import lobby_state, game_state
 
 HOST = "127.0.0.1"
-PORT = 7070
+PORT = 7072
 
 clients = {} # key: id - value: Client
 
@@ -435,9 +435,10 @@ if __name__ == "__main__":
         # Additionally calculate host and broadcast to all clients
         if  current_state == "FIND_HOST" and lobby.host_found() == False:
             host = lobby.calculate_host()
+            global players
+            clients[int(host.id)].player_data.is_host = True
             send_Host_To_All_Clients(host)
             lobby.update_state("HOST_FOUND")
-            # lobby.update_state("READY_UP")
             host_found = True
         current_state = lobby.get_state()
         if lobby.state_changed():

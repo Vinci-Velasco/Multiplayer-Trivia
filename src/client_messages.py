@@ -21,7 +21,7 @@ def update_player(update, player_data):
                     st.session_state.total_votes += 1
             elif update == "Readied_Up":
                 players[id].readied_up = True
-                st.session_state.total_votes += 1
+                st.session_state.total_ready += 1
             elif update == "Is_Host":
                 players[id].is_host = True
             elif update == "Score":
@@ -41,6 +41,7 @@ def update_data(label, data):
                     st.session_state.my_player = my_player
 
     elif label == "players_in_lobby":
+        ## Data contains list of all Players in the lobby
         players = {}
         total_votes = 0
         total_ready = 0 
@@ -71,8 +72,29 @@ def update_data(label, data):
         
     elif label == "lobby_state":
         update_lobby_state(data)
+
     elif label == "host_id":
-        st.session_state.host_id = data 
+        if 'host_id' not in st.session_state:
+            print("getting host ID")
+            host_id = int(data)
+            host_found = False
+            players = st.session_state.players
+
+            for p in players.values():
+                p_id = int(p.id)
+
+                if p_id == host_id:
+                    p.is_host = True
+                    st.session_state.host_player = p
+                    print("found host")
+
+                    host_found = True
+                    break
+        
+        if host_found == True:
+            print("assigning host")
+            st.session_state.host_id = host_id
+            st.session_state.ready_up = True
     else:
         print(f"Error! received unrecognized Send_Data label: {label}")
 
@@ -81,24 +103,26 @@ def update_lobby_state(lobby_state):
     print("... this should update...")
     if lobby_state == "WAIT":
         # wait until minimum amount of players are in lobby before starting the game
-        # TODO: turn off minimum players for testing purposes :]
-        st.session_state.min_players = True
+        pass
 
     elif lobby_state == "VOTE":
-        st.session_state.min_players = True
-        # change session state variables so that lobby.py shows voting
-        # send ack
-        pass
+        # minimum players are in lobby, start voting phase
+        if 'min_players' in st.session_state and st.session_state.min_players == False:
+            st.session_state.min_players = True
+        else:
+            st.session_state.min_players = True
     elif lobby_state == "HOST_FOUND":
-        # change session state variables so lobby.py shows who is the new host
-        # send ack
-        pass
+        if 'min_players' not in st.session_state:
+            st.session_state.min_players = True
+        if 'host_id' in st.session_state:
+            st.session_state.ready_up = True 
     elif lobby_state == "READY_UP":
-        st.session_state.ready_up = True
-        # st.session_state.vote_over = True
-        pass
+        if 'min_players' not in st.session_state:
+            st.session_state.min_players = True
+
+        if ('host_id' in st.session_state) and 'ready_up' not in st.session_state:
+            st.session_state.ready_up = True
     elif lobby_state == "START_GAME":
         st.session_state.ready_up_over = True
-        pass
 
     st.session_state.lobby_state = lobby_state

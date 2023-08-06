@@ -19,7 +19,11 @@ def draw_lobby(cols, players, vote_callback, ready_callback):
         
     ## List each connected player
     for p in players.values():
-        if p.is_me:
+        if p.is_me and ('host_id' in st.session_state) and p.is_host:
+            cols[1].write(f"Player {p.id} (You, Host)")
+        elif ('host_id' in st.session_state) and p.is_host:
+            cols[1].write(f"Player {p.id} (Host)")
+        elif p.is_me:
             cols[1].write(f"Player {p.id} (You)")
         else:
             cols[1].write(f"Player {p.id}")
@@ -33,7 +37,7 @@ def draw_lobby(cols, players, vote_callback, ready_callback):
             elif p.already_voted == False:
                 st.write("Voting...")
             elif 'ready_up' not in st.session_state:
-                st.write("Waiting for votes...")
+                st.write("Already voted...")
             elif p.readied_up == False:
                 st.write("Readying up...")
             else:
@@ -63,7 +67,8 @@ def draw_lobby(cols, players, vote_callback, ready_callback):
     else: 
         # Begin Ready Up phase
         num_players = len(players)
-        total_ready = get_total_ready(players.values())
+        # total_ready = get_total_ready(players.values())
+        total_ready = st.session_state.total_ready
         if (total_ready <= num_players):
             cols[4].write(f"Ready: {total_ready}/{num_players}")
 
