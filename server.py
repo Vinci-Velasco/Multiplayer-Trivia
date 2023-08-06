@@ -189,10 +189,11 @@ def try_to_grab_buzz_lock(sender_id, time_thread):
     for p in all_players:
 
         #if anyone else has the lock DO NOT GIVE THE CALLING SENDER THE LOCK
-        if(p.has_lock == True and p.id != clients[sender_id].player_data.id):
+        if(p.has_lock == True and p.id != clients[sender_id].player_data.id) or p.buzzed == True:
             return False
 
     clients[sender_id].player_data.has_lock = True
+    clients[sender_id].player_data.buzzed = True
 
     time_thread.start()
 
@@ -583,6 +584,8 @@ if __name__ == "__main__":
                         index = 1
                         #goes through all players and takes away lock from player who buzzed but also give them a point
                         for p in all_players:
+                            # reset the buzzed variable
+                            clients[index].player_data.buzzed = False
 
                             if clients[index].player_data.has_lock == True:
                                 clients[index].player_data.has_lock == False
