@@ -14,7 +14,7 @@ def get_state(players, last_state):
     #### Waiting for more players to join before we can start the game
 
 
-    if(last_state == "START_GAME"):
+    if(last_state == "START_GAME" or last_state == "SENDING_QUESTION"):
         return "START_GAME"
 
     if nplayers < MIN_PLAYERS:
@@ -55,7 +55,7 @@ def get_state(players, last_state):
         else: # After all players have readied up, start the game
             return "START_GAME"
 
-    return "INVALID_STATE"
+    return "Loby_INVALID_STATE_LOBBY"
 
 
 def calculate_host(players):

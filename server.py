@@ -446,14 +446,17 @@ if __name__ == "__main__":
             clients[sender_id].player_data.readied_up = True
 
         if(current_state == "START_GAME"):
+           # time.sleep(10)
             break
 
     #Token Parse------------------------------------------------------------------
 
     # close ability to connect
-    time.sleep(10)
+   
     recieve_connections_thread.stop()
     recieve_connections_thread.join()
+
+    print("flksdjf;lksaj;fkljas;fkljs;akljf;asjklf;kljas;kf;klsjf;\n")
 
     # send info to clients that main game has started
     # ...
@@ -508,8 +511,9 @@ if __name__ == "__main__":
             request = tokens[2]
 
             
-            current_state = parse_data_req(client, current_state, request)
-         
+            #current_state = parse_data_req(client, current_state, request)
+            if(request == "lobby_state"):
+                continue
             all_players = get_all_players()
 
             #PRINTING FOR TESTING - REMOVE IF NEEDED

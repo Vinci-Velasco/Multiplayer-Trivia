@@ -69,7 +69,7 @@ def get_state(players, last_state):
     elif last_state == "ENDING_GAME":
         pass
  
-    return "INVALID_STATE"
+    return "Game_INVALID_STATE_GAME"
 
 
 def did_all_players_view_question(players):
