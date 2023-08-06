@@ -1,98 +1,11 @@
+import random
+
+
 #### Application logic for game
 # use list of Players, not Client
 MIN_PLAYERS = 3
 
-class Game():
-    def __init__(self, host, player_list=[]):
-        self.player_list = player_list
-        self.current_state = "SENDING_QUESTION"
-        self.last_state = "SENDING_QUESTION"
 
-        self.host = host
-    
-    def update_state(self, new_state):
-        self.last_state = self.current_state
-        self.current_state = new_state
-        return new_state
-    
-    def update_players(self, player_list):
-        self.player_list = player_list
-    
-    #### Get current state of Lobby
-    def get_state(self):
-        state = self.current_state
-        player_list = self.player_list
-        num_players = len(player_list)
-
-        if state == "END_GAME":
-            return "END_GAME"
-        
-
-#Server will send out the question in this state to everyoe
-        elif state == "SENDING_QUESTION":     
-            total_views = did_all_players_view_question(player_list)
-
-            if total_views < num_players:
-                return "SENDING_QUESTION"
-            else:
-                return self.update_state("WAITING_FOR_BUZZ")
-            
-        elif state == "WAITING_FOR_BUZZ":
-            if self.did_someone_buzz(player_list) == True:
-                return self.update_state("SOMEONE_BUZZED")
-            else:
-                return "WAITING_FOR_BUZZ"
-        
-            #not really needed as a state but makes in easier to comprehend what is happening in the game
-        elif state == "SOMEONE_BUZZED":
-
-            return "WAITING_FOR_ANSWER"
-    
-        #server should start a timer thread during this statge 
-        elif state == "WAITING_FOR_ANSWER":
-        
-            #SERVER NEEDS TO manually change state to got answer or waiting for buzz state (depending on if the tiemr went off or not)
-            return "WAITING_FOR_ANSWER"
-    
-        #not really needed as a state but makes in easier to comprehend what is happening in the game
-        elif state == "GOT_ANSWER":
-            return "WAITING_FOR_HOSTS_CHOICE"
-
-        #server should loop unil host has made a decision or until a timer expires (not sure we are timing the host)
-        elif state == "WAITING_FOR_HOSTS_CHOICE":
-            
-            #SERVER NEEDS TO manually change state to GOT_HOST_CHOICE
-            return "WAITING_FOR_HOSTS_CHOICE"
-        
-        #server should give a player a point if they got the answer correct (not sure if we move on to a different question if client is wrong)
-        elif last_state == "GOT_HOST_CHOICE":
-
-            
-            return "GOT_HOST_CHOICE"
-
-            #SERVER can manually decide to change state to sending question or back to waiting for buzz
-
-        #server says game is over and which player won/display all points?
-        elif last_state == "GAME_OVER":
-            return "ENDING_GAME"
-
-        #actually start shutting game down
-        elif last_state == "ENDING_GAME":
-            pass
-    
-        return "Game_INVALID_STATE_GAME"
-        
-    def did_somone_buzz(self, player_list):
-        for p in player_list:
-            if p.has_lock == True:
-                return True
-
-        return False 
-
-
-
-
-    
 #### Get current state of game
 def get_state(players, last_state):
     nplayers = len(players)
