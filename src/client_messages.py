@@ -21,6 +21,7 @@ def update_player(update, player_data):
                     st.session_state.total_votes += 1
             elif update == "Readied_Up":
                 players[id].readied_up = True
+                st.session_state.total_votes += 1
             elif update == "Is_Host":
                 players[id].is_host = True
             elif update == "Score":
@@ -97,7 +98,7 @@ def update_lobby_state(lobby_state):
         # st.session_state.vote_over = True
         pass
     elif lobby_state == "START_GAME":
-        # send ack
+        st.session_state.ready_up_over = True
         pass
 
     st.session_state.lobby_state = lobby_state

@@ -16,6 +16,6 @@ class Player():
 
     def increaseScore(self):
         self.score += 1
-    
+
     def getScore(self):
         return self.score

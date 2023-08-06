@@ -27,7 +27,7 @@ class Lobby():
         player_list = self.player_list
         num_players = len(player_list)
 
-        if state == "START_GAME":
+        if state == "START_GAME" or self.last_state == "SENDING_QUESTION":
             return "START_GAME"
     
         ## Wait for minimum number of players to join

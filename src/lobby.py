@@ -54,6 +54,8 @@ def main():
 
         if not st.session_state.i_voted and hasattr(st.session_state, "my_player"):
             st.session_state.i_voted = st.session_state.my_player.already_voted
+        if not st.session_state.im_ready and hasattr(st.session_state, "my_player"):
+            st.session_state.im_ready = st.session_state.my_player.readied_up
 
         ## Draw GUI
         global cols

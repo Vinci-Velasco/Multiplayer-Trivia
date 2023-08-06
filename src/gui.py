@@ -48,7 +48,7 @@ def draw_lobby(cols, players, vote_callback, ready_callback):
             cols[3].button(f'Vote P{p.id}',  disabled=(st.session_state.i_voted or p.disconnected), on_click=vote_callback, args=(vote_id,), key=f"vote_btn{p.id}")
         elif p.is_me:
             # Ready Up buttons
-            cols[3].button('Ready', on_click=ready_callback)
+            cols[3].button('Ready', disabled=(st.session_state.im_ready or p.disconnected), on_click=ready_callback)
 
     ## Display current progress
 
@@ -63,8 +63,16 @@ def draw_lobby(cols, players, vote_callback, ready_callback):
     else: 
         # Begin Ready Up phase
         num_players = len(players)
-        total_ready = st.session_state.total_ready
+        total_ready = get_total_ready(players.values())
         if (total_ready <= num_players):
             cols[4].write(f"Ready: {total_ready}/{num_players}")
 
     return cols
+
+def get_total_ready(player_list):
+    total_ready = 0
+    for p in player_list:
+        if p.readied_up:
+            total_ready += 1
+
+    return total_ready

@@ -1,6 +1,8 @@
 import socket
 import time
 import pickle
+from threading import Thread
+from queue import Queue
 import streamlit as st
 from queue import Empty
 from src.st_notifier import notify, streamlit_loop 
@@ -52,7 +54,8 @@ def server_disconnect():
     st.session_state.my_socket.close()
     del st.session_state.my_socket
     time.sleep(.1)
-    streamlit_loop.call_soon_threadsafe(notify)
+    if streamlit_loop:
+        streamlit_loop.call_soon_threadsafe(notify)
 
 def req_data_from_server(s, request):
     message = f"Req_Data-String-{request}\n" 
@@ -98,86 +101,128 @@ def req_data_string(s, string):
 def ready_up_test():
     HOST = "127.0.0.1"
     PORT = 7070
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as my_socket:
-        my_socket.connect((HOST, PORT))
-        BUFFER_SIZE = 1024
-        my_id = 0
-        host_id = 0
 
-        my_socket.send("Req_Data-String-my_id".encode("utf8"))
-        my_id = my_socket.recv(BUFFER_SIZE).decode("utf8") # shouldnt follow this format anymore
+    my_socket.send("Req_Data-String-my_id".encode("utf8"))
+    my_id = my_socket.recv(BUFFER_SIZE).decode("utf8") # shouldnt follow this format anymore
 
-        print(f"You are player: {my_id}")
+    
+    my_id = 0
+    host_id = 0
 
 
-        index = 0
-        while True:
-            time.sleep(3)
-            my_socket.send("Req_Data-String-lobby_state".encode("utf8"))
-   
-            data = my_socket.recv(BUFFER_SIZE).decode("utf8")
-            print(f"Recived: {data}")
+    index = 0
+    my_socket.send("Req_Data-String-my_id".encode("utf8"))
 
-            tokens = data.split('-')
+    voted = False
+    readied_up = False
+    
+    while True:
+      
+        
+      
+        isString = False
+        
+        message = message_queue.get()
 
-            if(tokens[0] == "READY_UPStart_Game" or tokens[0] == "Start_Game"):
-                break
+      
 
-            if(tokens[0] == "Host_Number"):
+        my_socket.send("Req_Data-String-lobby_state".encode("utf8"))
+    
 
-                host_id = tokens[1]
-     
-            #on 5th loop client can choose to ready up (only here for testing change as needed)
-            if(index == 2):
+        
+            
+        if(str(message['data'])[:10] == "READY_UPStart_Game" or str(message['data'])[:10] == "START_GAME"):
+            break
+        elif((str(message['label'])[:10] == "my_id")):
+
+            my_id = str(message['data'])[:10]
+
+            print("My id is: ")
+            print(str(message['data'])[:10])
+            print("\n")
+        
+        elif(str(message['label'])[:10] == "host_id"):
+                
+                host_id = str(message['data'])[:10]
+                print("host: ")
+                print(host_id)
+                print("\n")
+        
+        #on 5th loop client can choose to ready up (only here for testing change as needed)
+
+        if(voted == False):
+  
+            if(str(message['data'])[:10] == "VOTE"):
+       
                 userTestInput = input("Who would you like to vote for? (#): ")
 
                 my_socket.send(f"Vote_Host-{userTestInput}".encode("utf8"))
-               
-         
-            if(index == 4):
+                voted = True
+
+
+        if(readied_up == False):
+
+            if(str(message['data'])[:10] == "READY_UP"):
                 userTestInput = input("Would you like to ready up? ('y' or 'n'): ")
 
 
                 if(userTestInput == "y"):
                     my_socket.send("Ready_Up-1".encode("utf8"))
+                    readied_up = True
+    
 
-            index += 1
+        index += 1
 
-        while True:
+    print("left lobby loop\n")
+    buzzedIn = False
+    answered = False
+    while True:
 
-           
-            time.sleep(3)
-        
-            my_socket.send("Req_Data-String-game_state".encode("utf8"))
-           
-            BUFFER_SIZE = 1024
-   
-            data = my_socket.recv(BUFFER_SIZE).decode("utf8")
-            print(f"Received From Game Loop: {data}")
+       # time.sleep(2)
+        message = message_queue.get()
+        print(str(message['data'])[:20])
+        my_socket.send("Req_Data-String-game_state".encode("utf8"))
 
-        
+        if(str(message['data'])[:20] == "SENDING_QUESTION"):
+                print("sending recieved question\n")
+                my_socket.send("Received_Question-NA".encode("utf8"))
 
-            if(data == "SENDING_QUESTION"):
-                 my_socket.send("Received_Question-NA".encode("utf8"))
 
-            
-            if(data == "WAITING_FOR_BUZZ"):
+        if(str(message['data'])[:20] == "WAITING_FOR_BUZZ"):
 
-                if(host_id != my_id):
+            if(host_id != my_id):
+
+                if(buzzedIn == False):
 
                     userTestInput = input("Would you like to buzz in? ('y' or 'n'): ")
                     if(userTestInput == "y"):
                         my_socket.send("Buzzing-NA".encode("utf8"))
+                        buzzedIn = True
 
-            
-            if(data == "WAITING_FOR_HOSTS_CHOICE"):
+        if(str(message['data'])[:20] == "WAITING_FOR_ANSWER"):
 
-                if(host_id == my_id):
-                    userTestInput = input("You are the host: is the answer correct or not? ('y' or 'n'): ")
-                    if(userTestInput == "y"):
-                        my_socket.send("Host_Choice-Y".encode("utf8"))
-                    else:
-                        my_socket.send("Host_Choice-N".encode("utf8"))
+            if(host_id != my_id and buzzedIn == True and answered == False):
+
+              
+                    userTestInput = input("Would you like to answer?: ")
+                   
+                    my_socket.send(f"Answer-{userTestInput}".encode("utf8"))
+                    answered = True
+                   # break
+
+
+                    
+
+
+        print(str(message['data'])[:20])
+        if(str(message['header'])[:20] == "Host_Verify"):
+
+            if(host_id == my_id):
+                userTestInput = input("You are the host: is the answer correct or not? ('y' or 'n'): ")
+                if(userTestInput == "y"):
+                    my_socket.send("Host_Choice-Y".encode("utf8"))
+                else:
+                    my_socket.send("Host_Choice-N".encode("utf8")) 
 
 if __name__ == '__main__':
     ready_up_test()

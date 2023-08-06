@@ -2,18 +2,128 @@
     "questions": [
         {
             "id": 1,
-            "question": "what flavor is strawberry shortcake?",
-            "answer": "sweet"
+            "question": "What flavor is strawberry shortcake?",
+            "answer": "Sweet"
         },
         {
             "id": 2,
-            "question": "what rhymes with orange?",
-            "answer": "door hinge"
+            "question": "What rhymes with orange?",
+            "answer": "Door hinge"
         },
         {
             "id": 3,
-            "question": "whats the difference between a fish and a piano?",
-            "answer": "tuna fish"
+            "question": "What's the difference between a fish and a piano?",
+            "answer": "Tuna fish"
+        },
+        {
+            "id": 4,
+            "question": "What's black and white and read all over?",
+            "answer": "Newspaper"
+        },
+        {
+            "id": 5,
+            "question": "Why was six afraid of seven?",
+            "answer": "Seven ate nine"
+        },
+        {
+            "id": 6,
+            "question": "What goes up but never comes down?",
+            "answer": "Age"
+        },
+        {
+            "id": 7,
+            "question": "Why dont any other shapes talk to circles?",
+            "answer": "There's no point"
+        },
+        {
+            "id": 8,
+            "question": "What is a trees favorite beverage?",
+            "answer": "Root beer"
+        },
+        {
+            "id": 9,
+            "question": "What kind of tree fits in your hand?",
+            "answer": "Palm tree"
+        },
+        {
+            "id": 10,
+            "question": "What do you call a funny mountain?",
+            "answer": "Hill-arious"
+        },
+        {
+            "id": 11,
+            "question": "What's a pirate's favorite letter?",
+            "answer": "Arrrr"
+        },
+        {
+            "id": 12,
+            "question": "What kind of haircuts do bees get?",
+            "answer": "Buzzcuts"
+        },
+        {
+            "id": 13,
+            "question": "What falls but never gets hurt?",
+            "answer": "Snow"
+        },
+        {
+            "id": 14,
+            "question": "What room has no doors or windows?",
+            "answer": "Mushroom"
+        },
+        {
+            "id": 15,
+            "question": "What stays in the corner yet can travel all over the world?",
+            "answer": "Stamp"
+        },
+        {
+            "id": 16,
+            "question": "What is blue but not heavy?",
+            "answer": "Light blue"
+        },
+        {
+            "id": 17,
+            "question": "What kind of teeth cost one dollar?",
+            "answer": "Buck teeth"
+        },
+        {
+            "id": 18,
+            "question": "What's a snake's favorite subject in school?",
+            "answer": "Hiss-tory"
+        },
+        {
+            "id": 19,
+            "question": "What's the math teacher's favorite dessert?",
+            "answer": "Pi"
+        },
+        {
+            "id": 20,
+            "question": "Why was the computer cold?",
+            "answer": "It had a virus"
+        },
+        {
+            "id": 21,
+            "question": "What do you call a sad berry?",
+            "answer": "Blueberry"
+        },
+        {
+            "id": 22,
+            "question": "What does a vegan zombie eat?",
+            "answer": "Grains"
+        },
+        {
+            "id": 23,
+            "question": "What is a scarecrow's favorite fruit?",
+            "answer": "Strawberries"
+        },
+        {
+            "id": 24,
+            "question": "What do you call a fish without an eye?",
+            "answer": "Fsh"
+        },
+        {
+            "id": 25,
+            "question": "What do frogs order at fast-food restaurants?",
+            "answer": "French flies"
         }
     ]
 }
