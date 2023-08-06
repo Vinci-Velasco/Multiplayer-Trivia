@@ -3,11 +3,11 @@ import time
 import pickle
 import streamlit as st
 from queue import Empty
-from src.st_notifier import notify, streamlit_loop 
-from src import client_messages
+#from src.st_notifier import notify, streamlit_loop 
+#from src import client_messages
 
 
-def listening_thread(sock, message_queue):
+"""def listening_thread(sock, message_queue):
     BUFFER_SIZE = 1024
     while True:
         try:
@@ -77,7 +77,7 @@ def parse_message(message):
 def req_data_string(s, string):
     message = f"Req_Data-String-{string}\n" 
     print(f"...sending message to server: {message}")
-    s.send(message.encode('utf8'))
+    s.send(message.encode('utf8')) """
 
 def ready_up_test():
     HOST = "127.0.0.1"
