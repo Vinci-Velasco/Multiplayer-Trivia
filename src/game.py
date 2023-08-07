@@ -7,9 +7,6 @@ import client
 cols = {}
 
 def init_game():
-    if 'current_question' not in st.session_state:
-        client.req_data_from_server(st.session_state.my_socket, "Question")
-
     if "game_state" not in st.session_state:
         st.session_state.game_state = "INIT"
 
@@ -23,6 +20,9 @@ def init_game():
         st.session_state.buzzer_id = None
         st.session_state.my_buzzer = False
 
+    # if 'current_question' not in st.session_state:
+    #     client.req_data_from_server(st.session_state.my_socket, "Question")
+
 def buzzer_callback():
     if st.session_state.buzzer_phase == True:
         # Send buzz to server
@@ -30,10 +30,12 @@ def buzzer_callback():
         st.session_state.buzzer_phase = False
 
 def main():
-    if 'current_question' not in st.session_state or 'game_state' not in st.session_state:
+    if 'game_state' not in st.session_state:
         init_game()
     elif st.session_state.game_state == "INIT":
         client.req_data_from_server(st.session_state.my_socket, "game_state")
+    elif 'current_question' not in st.session_state:
+        client.req_data_from_server(st.session_state.my_socket, "Question")
     else:
         # Start Game
         gui.draw_game_title()

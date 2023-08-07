@@ -1,5 +1,5 @@
 import streamlit as st
-import client
+from client import send_data_to_server
 import time
 #### Draw UI components
 # Called on each page update
@@ -112,8 +112,12 @@ def draw_game(buzzer_callback):
             else:
                 st.write(f"Player {buzzer_id} has the buzzer. Waiting...")
             
+    ## Start Host phase when host is verifying answer
     elif st.session_state.host_phase == True:
-        st.write("You are the player, waiting for host to verify")
+        st.write("Waiting for Host to verify answer...")
+    
+    else:
+        st.spinner("Loading...")
     
     return cols
 
@@ -134,15 +138,18 @@ def draw_host_game():
 def player_turn():
     with cols[2]:
         input_container = st.empty()
-        input_container.text_input.text_input("Type your answer here", key="player_answer")
+        input_container.text_input("Type your answer here", key="answer_input")
 
-    if st.session_state.player_answer != "":
+    sent = False
+    if st.session_state.answer_input != "" and sent == False:
         # Callback when player enters an answer
-        answer = str(st.session_state.player_answer)
-        client.send_data_to_server(st.session_state.my_socket, "Answer", answer)
+        answer = str(st.session_state.answer_input)
+        st.session_state.player_answer = answer
+        send_data_to_server(st.session_state.my_socket, "Answer", answer)
+        sent = True
         # Clear input box
         input_container.empty()
-        st.info(f"Sent answer: \"{answer}\"")
+        st.info(f"answer: \"{answer}\"")
     
 def host_turn():
     question = st.session_state.current_question
@@ -155,8 +162,8 @@ def host_turn():
         # TODO: update player scores
         if correct:
             st.success("Correct!")
-            # can properly pass function instead of importing client
-            client.send_data_to_server(st.session_state.my_socket, "Host_Choice", "y") 
+
+            send_data_to_server(st.session_state.my_socket, "Host_Choice", "y") 
             time.sleep(1)
             st.session_state.host_phase = False
             st.session_state.buzzer_phase = True
@@ -167,7 +174,7 @@ def host_turn():
             st.experimental_rerun()
         if incorrect:
             st.error("Wrong answer")
-            client.send_data_to_server(st.session_state.my_socket, "Host_Choice", "n")
+            send_data_to_server(st.session_state.my_socket, "Host_Choice", "n")
             time.sleep(1)
             st.session_state.host_phase = False
             st.session_state.buzzer_phase = True

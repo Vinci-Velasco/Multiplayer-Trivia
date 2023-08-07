@@ -97,12 +97,6 @@ def parse_message(message):
     else:
         print("LOL FAIL")
 
-#### Data Strings need to be decoded with utf8
-def req_data_string(s, string):
-    message = f"Req_Data-String-{string}\n" 
-    print(f"...sending message to server: {message}\n")
-    s.sendall(message.encode('utf8'))
-
 def ready_up_test():
     HOST = "127.0.0.1"
     PORT = 7070

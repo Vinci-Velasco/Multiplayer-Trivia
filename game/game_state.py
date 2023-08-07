@@ -6,7 +6,7 @@ class Game():
     def __init__(self, host, player_list=[]):
         self.player_list = player_list
         self.current_state = "SENDING_QUESTION"
-        self.last_state = "SENDING_QUESTION"
+        self.last_state = "START_GAME"
         self.current_question = None
         self.host = host
     
@@ -53,21 +53,15 @@ class Game():
             else:
                 return self.update_state("WAITING_FOR_BUZZ")
         
-            #not really needed as a state but makes in easier to comprehend what is happening in the game
         elif state == "SOMEONE_BUZZED":
-            return self.update_state("WAITING_FOR_ANSWER")
+            # Wait for answer or buzzer timeout
+            return self.update_state("SOMEONE_BUZZED")
     
-        #server should start a timer thread during this statge 
-        elif state == "WAITING_FOR_ANSWER":
-        
-            #SERVER NEEDS TO manually change state to got answer or waiting for buzz state (depending on if the tiemr went off or not)
-            return self.update_state("WAITING_FOR_ANSWER") 
-    
-        #server should loop unil host has made a decision or until a timer expires (not sure we are timing the host)
+
         elif state == "WAITING_FOR_HOSTS_CHOICE":
-            
             #SERVER NEEDS TO manually change state to GOT_HOST_CHOICE
             return self.update_state("WAITING_FOR_HOSTS_CHOICE")        
+        
         #server should give a player a point if they got the answer correct (not sure if we move on to a different question if client is wrong)
         elif state == "GOT_HOST_CHOICE":
 
