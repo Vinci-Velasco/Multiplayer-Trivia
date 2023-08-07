@@ -1,4 +1,5 @@
 import streamlit as st
+import time
 #### Draw UI components
 # Called on each page update
 
@@ -85,3 +86,39 @@ def draw_game(buzzer_callback):
         player_turn()
     elif st.session_state.host_phase:
         host_turn()
+
+def player_turn():
+    # TODO: check if my_id = buzzer_holder
+    input = cols[2].text_input("Type your answer here")
+    if input:
+        # check answer with host
+        st.session_state.last_answer = input
+        st.session_state.answer_phase = False
+        st.session_state.host_phase = True
+        st.experimental_rerun()
+    
+def host_turn():
+    #### TODO: check if my_id = host_id
+    question = st.session_state.current_question
+    st.subheader(f"Player wrote: \"{st.session_state.last_answer}\"") 
+    st.write(f"Correct Answer: {question.answer}") 
+    c1, c2 = st.columns(2)
+    correct = c1.button("✅ Correct", use_container_width=True)
+    incorrect = c2.button("❌ Incorrect", use_container_width=True)
+
+    if correct:
+        st.success("Correct!")
+        time.sleep(1)
+        st.session_state.host_phase = False
+        st.session_state.buzzer_phase = True
+        # remove correct question from question bank
+        question = st.session_state.current_question
+        st.session_state.qb.remove(question)
+        del st.session_state['current_question']
+        st.experimental_rerun()
+    if incorrect:
+        st.error("Wrong answer")
+        time.sleep(1)
+        st.session_state.host_phase = False
+        st.session_state.buzzer_phase = True
+        st.experimental_rerun()

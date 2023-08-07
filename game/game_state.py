@@ -7,7 +7,7 @@ class Game():
         self.player_list = player_list
         self.current_state = "SENDING_QUESTION"
         self.last_state = "SENDING_QUESTION"
-
+        self.current_question = None
         self.host = host
     
     def update_state(self, new_state):
@@ -65,7 +65,7 @@ class Game():
             return "WAITING_FOR_HOSTS_CHOICE"
         
         #server should give a player a point if they got the answer correct (not sure if we move on to a different question if client is wrong)
-        elif last_state == "GOT_HOST_CHOICE":
+        elif state == "GOT_HOST_CHOICE":
 
             
             return "GOT_HOST_CHOICE"
@@ -73,11 +73,11 @@ class Game():
             #SERVER can manually decide to change state to sending question or back to waiting for buzz
 
         #server says game is over and which player won/display all points?
-        elif last_state == "GAME_OVER":
+        elif state == "GAME_OVER":
             return "ENDING_GAME"
 
         #actually start shutting game down
-        elif last_state == "ENDING_GAME":
+        elif state == "ENDING_GAME":
             pass
     
         return "Game_INVALID_STATE_GAME"
@@ -88,8 +88,6 @@ class Game():
                 return True
 
         return False 
-
-
 
 
     

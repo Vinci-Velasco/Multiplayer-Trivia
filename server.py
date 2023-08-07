@@ -11,7 +11,7 @@ from src.question_bank import Question
 from game import lobby_state, game_state
 
 HOST = "127.0.0.1"
-PORT = 7072
+PORT = 7074
 
 clients = {} # key: id - value: Client
 
@@ -163,15 +163,8 @@ def received_question_confirmation(sender_id):
 
 
 def clear_received_question():
-
-    all_players = get_all_players()
-
-    index = 1
-    for p in all_players:
-
-         clients[index].player_data.received_question = False
-         index += 1
-
+    for c in clients.values:
+         c.player_data.received_question = False
 
 def get_playerid_who_has_lock():
     for p in all_players:
@@ -300,6 +293,13 @@ def parse_data_req(client, request, send_to_all=False):
         print(f"lobby_state: sending state to all -> {lobby_state}")
         send_state_update("Lobby", lobby_state, to_all=True)
         return 
+
+## GAME LOOP DATA REQUESTS
+    if request == "Question":
+        current_question = game.current_question
+        if current_question != None:
+            data = current_question
+            serialize = True
     
     # Serialize data if needed
     if serialize == True:
@@ -362,6 +362,8 @@ def send_question(question_bank):
 
     # avoid repeat questions
     question_bank["questions"].remove(selected_question)
+
+    return selected_question
 
 
 def buzzing():
@@ -472,6 +474,13 @@ if __name__ == "__main__":
     give_player_point = False
     new_question = False
     current_state = "SENDING_QUESTION"
+
+    if host != None:
+        game = game_state.Game(host, player_list=get_all_players())
+    else:
+        game = None
+        print("ERROR starting new game: host not found")
+
     while game_loop:
 
         # no more questions left
@@ -519,17 +528,17 @@ if __name__ == "__main__":
             all_players = get_all_players()
 
             #PRINTING FOR TESTING - REMOVE IF NEEDED
-            print("------Who HAS the lock (for testing)---------------\n")
-            print((f"#1: {all_players[0].has_lock}\n"))
-            print((f"#2: {all_players[1].has_lock}\n"))
-            print((f"#3: {all_players[2].has_lock}\n"))
-            print("=====================\n")
-            last_state = current_state
-            current_state = game_state.get_state(all_players, last_state)
+            # print("------Who HAS the lock (for testing)---------------\n")
+            # print((f"#1: {all_players[0].has_lock}\n"))
+            # print((f"#2: {all_players[1].has_lock}\n"))
+            # print((f"#3: {all_players[2].has_lock}\n"))
+            # print("=====================\n")
+            # last_state = current_state
+            # current_state = game_state.get_state(all_players, last_state)
 
 
             if current_state == "SENDING_QUESTION":
-                send_question(question_bank)
+                game.current_question = send_question(question_bank)
 
             elif current_state == "WAITING_FOR_BUZZ":
 

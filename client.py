@@ -29,12 +29,13 @@ def listening_thread(sock, message_queue):
             for m in message.split("\n"):
                 if m != "":
                     message_queue.put(m)
-            # update_queue(message_queue)
     
 #### Runs each time a new message arrives from the server to update the front-end
 def update_queue(message_queue):
     while True:
         try:
+            if 'my_socket' not in st.session_state:
+                break
             message = message_queue.get(block=True)
         except Empty as e:
             raise Exception('error, queue is empty. did server disconnect?') from e

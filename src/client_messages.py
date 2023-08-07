@@ -98,8 +98,14 @@ def update_data(label, data):
             print("assigning host")
             st.session_state.host_id = host_id
             st.session_state.ready_up = True
+            
+## GAME LOOP DATA --------------------------
+    elif label == "Question":
+        question = pickle.loads(data)
+        st.session_state.current_question = question
+
     else:
-        print(f"Error! received unrecognized Send_Data label: {label}")
+        print(f"Error in Game! received unrecognized Send_Data label: {label}")
     
 def update_game_state(game_state):
     if game_state == "SENDING_QUESTION":
