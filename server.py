@@ -11,7 +11,7 @@ from src.question_bank import Question
 from game import lobby_state, game_state
 
 HOST = "127.0.0.1"
-PORT = 7076
+PORT = 7079
 
 clients = {} # key: id - value: Client
 
@@ -235,16 +235,16 @@ def send_message_to_all(header, label, data, except_id=-1):
 
             c.socket.sendall(pickle.dumps(message))
             to_console = str(data)[:10] + "..."
-            print(f"....sending message to Client from all {c.id}:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
+            print(f"(send_message_to_all) sending to {c.id}")
             if sent == False:
                 sent = True
         else:
-            print(f"did not send to {c.id}")
+            print(f"(send_message_to_all) skipped {c.id}")
 
     if sent:
 
         to_console = str(data)[:10] + "..."
-        print("....sending message to all clients:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
+        print("....sent message to all clients:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
 
 
 #### Send an update to all clients about a specific Player

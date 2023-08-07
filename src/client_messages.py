@@ -122,10 +122,16 @@ def update_data(label, data):
     
 def update_game_state(game_state):
     if game_state == "SENDING_QUESTION":
+        ## If client has received a Question from the server already...
         if 'current_question' in st.session_state and st.session_state.current_question != None:
             # Send Question Confirmation to server
             client.send_data_to_server(st.session_state.my_socket, "Received_Question", "")
             st.session_state.my_player.received_question = True
+    
+    elif game_state == "WAITING_FOR_BUZZ":
+        # this is the only time buzzer should be open
+        st.session_state.buzzer_phase = True
+        pass
 
     st.session_state.game_state = game_state
 
@@ -160,7 +166,7 @@ def update_lobby_state(lobby_state):
         st.session_state.ready_up_over = True
 
     elif lobby_state == "SENDING_QUESTION":
-        update_game_state(lobby_state) 
+        print("error, SENDING_QUESTION is being sent in lobby_state!")
         pass
 
     st.session_state.lobby_state = lobby_state

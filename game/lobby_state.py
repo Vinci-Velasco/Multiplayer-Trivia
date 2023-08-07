@@ -48,7 +48,7 @@ class Lobby():
         ##  After voting complete, next state is to Find Host
         # Server needs to change the state to HOST_FOUND manually once it calculates the host and broadcasts choice to all clients
         elif state == "FIND_HOST":
-            return "FIND_HOST"
+            return self.update_state("FIND_HOST")
     
         elif state == "HOST_FOUND":
             return self.update_state("READY_UP")

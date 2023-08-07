@@ -8,7 +8,7 @@ import client
 cols = {}
 
 def init_game():
-    st.session_state.buzzer_phase = True
+    st.session_state.buzzer_phase = False
     st.session_state.answer_phase = False
     st.session_state.host_phase = False
 

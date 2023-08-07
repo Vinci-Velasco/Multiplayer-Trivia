@@ -93,11 +93,14 @@ def draw_game(buzzer_callback):
     c1, c2, c3 = st.columns(3, gap="large")
     cols = { 1: c1, 2: c2, 3: c3}
 
-    if st.session_state.buzzer_phase:
+    ## only show Buzzer button during Buzzer phase
+    if st.session_state.buzzer_phase == True:
         cols[2].button('Buzzer', on_click=buzzer_callback, use_container_width=True)
-    elif st.session_state.answer_phase:
+
+    elif st.session_state.answer_phase == True:
+
         player_turn()
-    elif st.session_state.host_phase:
+    elif st.session_state.host_phase == True:
         "You are the player, waiting for host to verify"
 
 def draw_host_game():
@@ -105,8 +108,8 @@ def draw_host_game():
     c1, c2, c3 = st.columns(3, gap="large")
     cols = { 1: c1, 2: c2, 3: c3}
 
-    if st.session_state.buzzer_phase:
-        st.write("You are the host")
+    if st.session_state.buzzer_phase == True:
+        st.write("You are the host. This is the Buzzer phase.")
     elif st.session_state.answer_phase:
         st.subheader("You are the host, someone is answering")
     elif st.session_state.host_phase:
