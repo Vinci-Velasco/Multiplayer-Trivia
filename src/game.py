@@ -1,8 +1,7 @@
-import random
-import time
 import streamlit as st
 from src.question_bank import *
 from src import gui
+import time
 import client
 
 cols = {}
@@ -31,7 +30,7 @@ def buzzer_callback():
         st.session_state.buzzer_phase = False
 
 def main():
-    if 'current_question' not in st.session_state:
+    if 'current_question' not in st.session_state or 'game_state' not in st.session_state:
         init_game()
     elif st.session_state.game_state == "INIT":
         client.req_data_from_server(st.session_state.my_socket, "game_state")
@@ -39,10 +38,11 @@ def main():
         # Start Game
         gui.draw_game_title()
 
+        global cols
         if st.session_state.im_host == True: # DRAW HOST UI
-            gui.draw_host_game()
+            cols = gui.draw_host_game()
         else: 
-            gui.draw_game(buzzer_callback)
+            cols = gui.draw_game(buzzer_callback)
 
 if __name__ == '__main__':
     main()

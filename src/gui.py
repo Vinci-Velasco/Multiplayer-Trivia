@@ -58,7 +58,7 @@ def draw_lobby(cols, players, vote_callback, ready_callback):
 
     ## Display current progress
 
-    if 'min_players' not in st.session_state:
+    if st.session_state.min_players == False:
         cols[4].write("Waiting for more players to join...")
     elif 'ready_up' not in st.session_state:
         # Begin Vote phase
@@ -113,8 +113,9 @@ def draw_game(buzzer_callback):
                 st.write(f"Player {buzzer_id} has the buzzer. Waiting...")
             
     elif st.session_state.host_phase == True:
-        host_turn()
-        # "You are the player, waiting for host to verify"
+        st.write("You are the player, waiting for host to verify")
+    
+    return cols
 
 def draw_host_game():
     global cols
@@ -127,14 +128,21 @@ def draw_host_game():
         st.subheader("You are the host, someone is answering")
     elif st.session_state.host_phase:
         host_turn()
+        
+    return cols
 
 def player_turn():
-    input = cols[2].text_input("Type your answer here")
-    if input:
+    with cols[2]:
+        input_container = st.empty()
+        input_container.text_input.text_input("Type your answer here", key="player_answer")
+
+    if st.session_state.player_answer != "":
         # Callback when player enters an answer
-        st.session_state.player_answer = input
-        client.send_data_to_server(st.session_state.my_socket, "Answer", input)
-        # st.session_state.host_phase = True st.experimental_rerun()
+        answer = str(st.session_state.player_answer)
+        client.send_data_to_server(st.session_state.my_socket, "Answer", answer)
+        # Clear input box
+        input_container.empty()
+        st.info(f"Sent answer: \"{answer}\"")
     
 def host_turn():
     question = st.session_state.current_question

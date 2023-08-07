@@ -165,6 +165,10 @@ def update_game_state(game_state):
         if st.session_state.buzzer_locked == True: 
             st.session_state.buzzer_phase = False
             st.session_state.answer_phase = True
+    
+    else:
+        print(f"Error! client received unrecognized game_state: {game_state}")
+        return
 
     st.session_state.game_state = game_state
 
@@ -180,6 +184,11 @@ def update_lobby_state(lobby_state):
         # minimum players are in lobby, start voting phase
         if st.session_state.min_players == False:
             st.session_state.min_players = True
+    
+    elif lobby_state == "FIND_HOST":
+        # Need to wait for server to send host
+       if st.session_state.min_players == False:
+            st.session_state.min_players = True 
   
     elif lobby_state == "HOST_FOUND":
         if st.session_state.min_players == False:
@@ -199,7 +208,11 @@ def update_lobby_state(lobby_state):
 
     elif lobby_state == "SENDING_QUESTION":
         print("error, SENDING_QUESTION is being sent in lobby_state!")
-        pass
+        return
+
+    else:
+        print(f"Error! client received unrecognized lobby_state: {lobby_state}")
+        return
 
     st.session_state.lobby_state = lobby_state
 
@@ -209,7 +222,9 @@ def update_host_client(label, data):
         if label == "player_answer":
             player_answer = str(data)
             st.session_state.player_answer = player_answer
+        else:
+            print(f"Error in host client! received unrecognized Host_Verify label: {label}")
 
     else:
         my_id = st.session_state.my_id
-        print(f"error: host data was sent to non-host client {my_id}")
+        print(f"error: host data {label} was sent to non-host client {my_id}")

@@ -11,7 +11,7 @@ from src.question_bank import Question
 from game import lobby_state, game_state
 
 HOST = "127.0.0.1"
-PORT = 7078
+PORT = 7072
 
 clients = {} # key: id - value: Client
 
@@ -329,16 +329,18 @@ def add_host_vote(client, vote_id):
     send_player_update_to_all("Already_Voted", client.id)
 
 # Send answer from player to host so the host can confirm if the answer is correct. Returns True if it went through, False otherwise
-def answer(sender_id, event, data):
+def send_answer_to_host(sender_id, event, answer):
     # ensure if the person who sent the answer token actually has the lock
     if sender_id != get_playerid_who_has_lock():
         print(f"Answer from {sender_id} rejected")
         return False
-
+    
     # send answer to host
     host_client = get_host()
 
-    send_message_to_client(host_client, "Host_Verify", "player_answer", data)
+    print (f"Sending answer from {sender_id} to host {host_client.id}: {answer}\n")
+
+    send_message_to_client(host_client, "Host_Verify", "player_answer", answer)
 
     # stop timer thread
     event.set()
@@ -385,14 +387,6 @@ if __name__ == "__main__":
     message_queue = Queue() # locks are already built in to Queue class
     recieve_connections_thread = Recieve_Connection_Thread(server, message_queue)
     recieve_connections_thread.start()
-
-    # #### Lobby loop ------------------------------------------------------------------
-    # host_found = False
-    # all_ready = False
-    # while not (all_ready and host_found):
-    #     #gets the message and its coresponding sender adderess
-    #     message, addr = message_queue.get()
-    #     print(message)
 
     #### Lobby loop ------------------------------------------------------------------
     host_found = False
@@ -624,7 +618,9 @@ if __name__ == "__main__":
                give_player_point = False
 
         elif (tokens[0] == "Answer"):
-            answer_came = answer(PlayerNumber[addr][0], event, tokens[1])
+            answer_str = str(tokens[1])
+            # send answer to host
+            answer_came = send_answer_to_host(sender_id, event, answer_str)
 
             # re-create thread instance (needed to start a new timer thread again for the future)
             if answer_came:

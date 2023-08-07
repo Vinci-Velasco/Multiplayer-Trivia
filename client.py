@@ -88,6 +88,7 @@ def parse_message(message):
         elif label == "Game" and 'game_start' in st.session_state:
             client_messages.update_game_state(state_data)
     
+    # Send player answers to the Host
     elif message['header'] == "Host_Verify":
         label = message['label']
         data = message['data']
