@@ -220,6 +220,23 @@ def get_host():
 
     return None
 
+#find out the ID of who won the game
+def find_out_who_won(players):
+
+    for p in players:
+        
+        if p.score == 10:
+            return p.id
+
+#send everyone's final scores to everyone at end of game 
+def send_everyones_scores(players):
+
+    for p in players:
+
+        #label is set to the player ID
+        send_message_to_all("Final_Score", p.id, p.score)
+
+
 #Token functions-------------------------------------------------------------------------------------
 
 
@@ -513,21 +530,18 @@ if __name__ == "__main__":
             request = tokens[2]
 
             
-            #current_state = parse_data_req(client, current_state, request)
+            #if an outdated request for the lobby state comes do nothing 
             if(request == "lobby_state"):
                 continue
             all_players = get_all_players()
-
-            #PRINTING FOR TESTING - REMOVE IF NEEDED
-            print("------Who HAS the lock (for testing)---------------\n")
-            print((f"#1: {all_players[0].has_lock}\n"))
-            print((f"#2: {all_players[1].has_lock}\n"))
-            print((f"#3: {all_players[2].has_lock}\n"))
-            print("=====================\n")
+ 
             last_state = current_state
+
+            #get the current state from the game_state file 
             current_state = game_state.get_state(all_players, last_state)
 
 
+            #send a single question out to everyone 
             if current_state == "SENDING_QUESTION":
                 send_question(question_bank)
 
@@ -535,7 +549,6 @@ if __name__ == "__main__":
 
                 #this sets everyone's recieved_question variable back to false
                 clear_received_question()
-
 
             elif current_state == "WAITING_FOR_ANSWER":
 
@@ -609,10 +622,14 @@ if __name__ == "__main__":
                         current_state = "GAME_OVER"
 
             elif current_state == "GAME_OVER":
-                pass
-                #TODO: send everyone a message telling each client the game is over
-                #TODO: send everyoen the all_players list so each client can find out each persons score
-                #TODO: might send everyone which player id won
+               
+                winnder_id = find_out_who_won(all_players)
+
+                send_message_to_all("Someone_has_won", "winner_id", winnder_id)
+
+                send_everyones_scores(all_players)
+        
+                current_state = "ENDING_GAME"
 
             elif current_state == "ENDING_GAME":
 
@@ -622,7 +639,7 @@ if __name__ == "__main__":
 
             send_message_to_client(client, "Send_Data", "game_state", current_state)
 
-                # send_data_to_client(client, data_type, current_state)
+         
 
 
 
