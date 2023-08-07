@@ -116,6 +116,12 @@ def update_data(label, data):
     elif label == "Question":
         question = pickle.loads(data)
         st.session_state.current_question = question
+    elif label == "Buzzing":
+        buzz_id = int(data)
+        
+        if buzz_id == st.session_state.my_id:
+            st.session_state.my_turn = True
+
 
     else:
         print(f"Error in Game! received unrecognized Send_Data label: {label}")

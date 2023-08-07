@@ -12,7 +12,7 @@ def init_game():
     st.session_state.answer_phase = False
     st.session_state.host_phase = False
 
-    st.session_state.my_turn = True
+    st.session_state.my_turn = False
 
     if 'current_question' not in st.session_state:
         client.req_data_from_server(st.session_state.my_socket, "Question")
@@ -20,6 +20,7 @@ def init_game():
 def buzzer_callback():
     st.session_state.buzzer_phase = False
     st.session_state.answer_phase = True
+    client.send_data_to_server(st.session_state.my_socket, "Buzzing")
 
 def main():
     if 'current_question' not in st.session_state:

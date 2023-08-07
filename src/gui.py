@@ -98,10 +98,10 @@ def draw_game(buzzer_callback):
         cols[2].button('Buzzer', on_click=buzzer_callback, use_container_width=True)
 
     elif st.session_state.answer_phase == True:
-
         player_turn()
     elif st.session_state.host_phase == True:
-        "You are the player, waiting for host to verify"
+        host_turn()
+        # "You are the player, waiting for host to verify"
 
 def draw_host_game():
     global cols
@@ -117,13 +117,18 @@ def draw_host_game():
 
 def player_turn():
     # TODO: check if my_id = buzzer_holder
-    input = cols[2].text_input("Type your answer here")
-    if input:
-        # check answer with host
-        st.session_state.last_answer = input
-        st.session_state.answer_phase = False
-        st.session_state.host_phase = True
-        st.experimental_rerun()
+    if st.session_state.my_turn:
+        input = cols[2].text_input("Type your answer here")
+        if input:
+            # check answer with host
+            
+            st.session_state.last_answer = input
+            st.session_state.answer_phase = False
+            st.session_state.host_phase = True
+            client.send_data_to_server(st.session_state.my_socket, "Answer", input) 
+            st.experimental_rerun()
+    else:
+        st.subheader("Someone buzzed before you! They are answering")
     
 def host_turn():
     question = st.session_state.current_question
