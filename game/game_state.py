@@ -17,7 +17,6 @@ class Game():
     
     def update_players(self, player_list):
         self.player_list = player_list
-    
 
     def state_changed(self):
         return not self.last_state == self.current_state
@@ -38,7 +37,7 @@ class Game():
         if state == "END_GAME":
             return "END_GAME"
         
-#Server will send out the question in this state to everyoe
+        ## Server will send out the question in this state to everyoe
         elif state == "SENDING_QUESTION":     
             total_views = did_all_players_view_question(player_list)
 
@@ -47,27 +46,26 @@ class Game():
             else:
                 return self.update_state("WAITING_FOR_BUZZ")
             
+        ## Game is waiting for any player to click the buzzer
         elif state == "WAITING_FOR_BUZZ":
             if self.did_someone_buzz(player_list) == True:
                 return self.update_state("SOMEONE_BUZZED")
             else:
                 return self.update_state("WAITING_FOR_BUZZ")
         
+        ## A player has the buzzer. Wait for answer or buzzer timeout, handled on server-side
         elif state == "SOMEONE_BUZZED":
-            # Wait for answer or buzzer timeout
             return self.update_state("SOMEONE_BUZZED")
-    
 
+        ## Host is reviewing player's answer
         elif state == "WAITING_FOR_HOSTS_CHOICE":
             #SERVER NEEDS TO manually change state to GOT_HOST_CHOICE
             return self.update_state("WAITING_FOR_HOSTS_CHOICE")        
         
-        #server should give a player a point if they got the answer correct (not sure if we move on to a different question if client is wrong)
+        ## Received Host's verification. Clients will wait until server finishes transitioning into the next level of the Game.
         elif state == "GOT_HOST_CHOICE":
-
-            
+            #server should give a player a point if they got the answer correct (not sure if we move on to a different question if client is wrong)
             return "GOT_HOST_CHOICE"
-
             #SERVER can manually decide to change state to sending question or back to waiting for buzz
 
         #server says game is over and which player won/display all points?
@@ -81,7 +79,6 @@ class Game():
         return "Game_INVALID_STATE_GAME"
         
     
-#### Get current state of game
 def get_state(players, last_state):
     nplayers = len(players)
     

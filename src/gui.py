@@ -167,9 +167,9 @@ def host_turn():
     if correct:
         st.success("Correct!")
 
-        send_data_to_server(st.session_state.my_socket, "Host_Choice", "y") 
+        send_data_to_server(st.session_state.my_socket, "Host_Choice", "Y") 
         # TODO: get next question from server
     
     if incorrect:
         st.error("Wrong answer")
-        send_data_to_server(st.session_state.my_socket, "Host_Choice", "n")
+        send_data_to_server(st.session_state.my_socket, "Host_Choice", "N")

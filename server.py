@@ -541,18 +541,7 @@ if __name__ == "__main__":
             if request != "lobby_state":
                 parse_data_req(client, request)
 
-            # all_players = get_all_players()
-
-            # if current_state == "WAITING_FOR_HOSTS_CHOICE":
-
-            #     #host_voted gets updated when a host_vote token is parsed
-            #     if(host_voted == False):
-            #         current_state = "WAITING_FOR_HOSTS_CHOICE"
-            #     else:
-            #         current_state = "GOT_HOST_CHOICE"
-            #         host_voted = False
-
-            # elif current_state == "GOT_HOST_CHOICE":
+             # elif current_state == "GOT_HOST_CHOICE":
 
             #     #give_player_point variable is changed by the host_choice function which Tony is working on
             #     if(give_player_point == False):
@@ -625,12 +614,21 @@ if __name__ == "__main__":
            try_to_grab_buzz_lock(sender_id, time_thread)
 
         elif (tokens[0] == "Host_Choice"):
-            host_voted = True
-
-            if(tokens[1] == "Y"):
-               give_player_point = True
+            choice = tokens[1]
+            if choice == "Y":
+                pass
+                # TODO: update state, change question, give player point
+            elif choice == "N":
+                pass
+                # TODO: update state
             else:
-               give_player_point = False
+                print("(Host_Choice) error, unrecognized input")
+
+            # # host_voted = True
+            # if(tokens[1] == "Y"):
+            # #    give_player_point = True
+            # else:
+            # #    give_player_point = False
 
         elif (tokens[0] == "Answer"):
             answer_str = str(tokens[1])
