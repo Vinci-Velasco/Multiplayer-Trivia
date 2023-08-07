@@ -4,6 +4,7 @@ import time
 import pickle
 import json
 import random
+import sys, os
 from queue import Queue
 
 from src import player
@@ -11,7 +12,7 @@ from src.question_bank import Question
 from game import lobby_state, game_state
 
 HOST = "127.0.0.1"
-PORT = 7078
+port = 7078
 
 clients = {} # key: id - value: Client
 
@@ -90,7 +91,7 @@ class Recieve_Connection_Thread(threading.Thread):
     # server.accept() call. This is safer than killing the thread as it can terminate properly
     def stop(self):
         self.stop_connections = True
-        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((HOST, PORT))
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((HOST, port))
 
 class Client():
     def __init__(self, id, socket, addr, player):
@@ -114,6 +115,10 @@ def disconnect_client(client_socket):
         send_player_update_to_all("Disconnect", target.id)
 
         print(f"...closing inactive listening thread for client {target.id}")
+    if len(sys.argv) > 1:
+        print("exit")
+        os._exit(1)
+
 
 # Returns a list of Players from all connected clients
 def get_all_players():
@@ -369,10 +374,14 @@ def buzzing():
 #Token functions-------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        print(sys.argv[1])
+        port = int(sys.argv[1])
     # setup server socket
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # SOCK_STREAM = TCP
-    server.bind((HOST, PORT))
+    server.bind((HOST, port))
     server.listen()
+    print(f'Port is: {port}')
 
     # data structures to hold client sockets and message queue so main can communicate with listening threads and vice versa
     client_sockets = []
