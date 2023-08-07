@@ -11,7 +11,7 @@ from src.question_bank import Question
 from game import lobby_state, game_state
 
 HOST = "127.0.0.1"
-PORT = 7079
+PORT = 7072
 
 clients = {} # key: id - value: Client
 
@@ -175,15 +175,17 @@ def get_playerid_who_has_lock():
 
 def try_to_grab_buzz_lock(sender_id, time_thread):
 
-    for p in all_players:
+    for c in clients.values():
+        p = c.player_data
 
         #if anyone else has the lock DO NOT GIVE THE CALLING SENDER THE LOCK
-        if(p.has_lock == True and p.id != clients[sender_id].player_data.id):
-            print(f"Buzzing denied for player{sender_id}")
+        if p.has_lock == True and (p.id != sender_id):
+            print(f"Buzzing denied for player {sender_id}")
             return False
 
     clients[sender_id].player_data.has_lock = True
-    send_message_to_all("Send_Data", "Buzzing", sender_id)
+    # send_message_to_all("Send_Data", "Buzzing", sender_id)
+    send_player_update_to_all("Has_Lock", sender_id)
 
     time_thread.start()
 
@@ -491,10 +493,6 @@ if __name__ == "__main__":
             game.update_state("END_GAME")
             break
 
-        if current_state == "SENDING_QUESTION" and question_init == False:
-            game.current_question = send_question(question_bank)
-            question_init = True
-
         message, addr = message_queue.get()
 
         #enter if the answer timer ran out and someone actually buzzed in
@@ -667,8 +665,11 @@ if __name__ == "__main__":
         if(current_state == "END_GAME"):
            # time.sleep(10)
             break
+        elif current_state == "SENDING_QUESTION" and question_init == False:
+            game.current_question = send_question(question_bank)
+            send_state_update("Game", current_state, to_all=True)
+            question_init = True
         
-
 
 
         #Token Parse------------------------------------------------------------------

@@ -79,8 +79,15 @@ def draw_lobby(cols, players, vote_callback, ready_callback):
 def draw_game_title():
     if st.session_state.host_phase:
         st.title("Host is checking answer...")
+
     elif st.session_state.answer_phase:
-        st.title('Your turn!') 
+        if st.session_state.buzzer_id != None:
+            if st.session_state.my_buzzer == True:
+               st.title("Your turn!") 
+            else:
+               st.title(f"Player {st.session_state.buzzer_id} has the buzzer...")
+        else:
+            st.title("Someone buzzed!")
 
     if ('current_question' in st.session_state) and (st.session_state.current_question != None):
         question = st.session_state.current_question
@@ -97,9 +104,13 @@ def draw_game(buzzer_callback):
     if st.session_state.buzzer_phase == True:
         cols[2].button('Buzzer', on_click=buzzer_callback, use_container_width=True)
 
+    ## Start Answer phase when some player has_lock
     elif st.session_state.answer_phase == True:
-
-        player_turn()
+        if st.session_state.buzzer_id != None:
+            if st.session_state.my_buzzer == True:
+                player_turn()
+            
+        ## TODO: else request buzzer_id from server?
     elif st.session_state.host_phase == True:
         "You are the player, waiting for host to verify"
 

@@ -12,22 +12,26 @@ def init_game():
     st.session_state.answer_phase = False
     st.session_state.host_phase = False
 
-    st.session_state.my_turn = True
+    st.session_state.buzzer_locked = False
+    st.session_state.buzzer_id = None
+    st.session_state.my_buzzer = False
 
     if 'current_question' not in st.session_state:
         client.req_data_from_server(st.session_state.my_socket, "Question")
+        # st.session_state.current_question = None
 
 def buzzer_callback():
-    st.session_state.buzzer_phase = False
-    st.session_state.answer_phase = True
+    if st.session_state.buzzer_phase == True:
+        # Send buzz to server
+        client.send_data_to_server(st.session_state.my_socket, "Buzzing", "")
+        st.session_state.buzzer_phase = False
 
 def main():
-    if 'current_question' not in st.session_state:
+    if 'current_question' not in st.session_state or 'my_buzzer' not in st.session_state:
         init_game()
-    # elif st.session_state.current_question == None:
-    #     client.req_data_from_server(st.session_state.my_socket, "Question")
     else:
         gui.draw_game_title()
+
         if st.session_state.im_host == True:
             ### DRAW HOST UI
             gui.draw_host_game()

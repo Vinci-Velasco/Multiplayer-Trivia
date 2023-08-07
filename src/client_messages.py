@@ -31,6 +31,15 @@ def update_player(update, player_data):
                     st.session_state.im_host = False
             elif update == "Score":
                 players[id].score += 1
+            
+            elif update == "Has_Lock":
+                players[id].has_lock = True
+                st.session_state.buzzer_locked = True
+                st.session_state.buzzer_id = id
+                
+                if players[id].is_me:
+                    st.session_state.my_buzzer = True
+
 
 ## Store incoming data into Streamlit session state
 def update_data(label, data):
@@ -123,15 +132,19 @@ def update_data(label, data):
 def update_game_state(game_state):
     if game_state == "SENDING_QUESTION":
         ## If client has received a Question from the server already...
-        if 'current_question' in st.session_state and st.session_state.current_question != None:
+        if 'current_question' in st.session_state and st.session_state.current_question != None and st.session_state.my_player.received_question == False:
             # Send Question Confirmation to server
-            client.send_data_to_server(st.session_state.my_socket, "Received_Question", "")
             st.session_state.my_player.received_question = True
+            client.send_data_to_server(st.session_state.my_socket, "Received_Question", "")
     
     elif game_state == "WAITING_FOR_BUZZ":
         # this is the only time buzzer should be open
         st.session_state.buzzer_phase = True
-        pass
+    
+    elif game_state == "SOMEONE_BUZZED":
+        if 'buzzer_id' in st.session_state and st.session_state.buzzer_id != None: 
+            st.session_state.buzzer_phase = False
+            st.session_state.answer_phase = True
 
     st.session_state.game_state = game_state
 

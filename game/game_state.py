@@ -55,7 +55,6 @@ class Game():
         
             #not really needed as a state but makes in easier to comprehend what is happening in the game
         elif state == "SOMEONE_BUZZED":
-
             return self.update_state("WAITING_FOR_ANSWER")
     
         #server should start a timer thread during this statge 
