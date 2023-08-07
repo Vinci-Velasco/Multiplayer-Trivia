@@ -142,27 +142,6 @@ def viewPlayerScore(client_id):
     players_data = client.player_data
     print(players_data.getScore())
 
-
-def allPlayersReady(ready_clients):
-    index = 0
-    proceedOrNot = True
-
-
-    for allClients in client_sockets:
-
-        if(ready_clients[index] == False):
-
-            for client in client_sockets:
-                # send data to all clients
-
-                #commented out until a solution for slowing down the rate of sending is found
-                #client.send(str(f"Waiting on Player {index + 1} to ready up!\n").encode("utf8"))
-                proceedOrNot = False
-
-        index += 1
-    return proceedOrNot
-
-
 def clear_received_question():
     for c in clients.values():
          c.player_data.received_question = False
@@ -280,6 +259,7 @@ def parse_data_req(client, request, send_to_all=False):
     data = None
     serialize = False
 
+    ## LOBBY LOOP DATA REQUESTS
     if request == "my_id":
         data = client.id
 
@@ -299,7 +279,7 @@ def parse_data_req(client, request, send_to_all=False):
         send_state_update("Lobby", lobby_state, to_all=True)
         return 
 
-## GAME LOOP DATA REQUESTS
+    ## GAME LOOP DATA REQUESTS
     if request == "Question":
         current_question = game.current_question
 
@@ -309,6 +289,7 @@ def parse_data_req(client, request, send_to_all=False):
             send_state_update("Game", "SENDING_QUESTION", to_all=True)
         else:
             return
+
     elif request == "game_state":
         if game.last_state != ("START_GAME"):
             send_state_update("Game", game.last_state, to_all=True)
@@ -360,8 +341,8 @@ def send_answer_to_host(sender_id, event, answer):
     event.set()
     return True
 
-# Sends question from question bank to all clients
-def send_question(question_bank):
+# gets next question from question bank
+def get_next_question(question_bank):
     # select rand question
     num_of_questions = len(question_bank["questions"])
     rand_num = random.randint(0, num_of_questions-1)
@@ -369,20 +350,11 @@ def send_question(question_bank):
 
     q = Question(selected_question["id"], selected_question["question"], selected_question["answer"])
 
-    # serialize and send to all
-    # q_data = pickle.dumps(q)
-    # send_message_to_all("Send_Data", "Question", q_data)
-
     # avoid repeat questions
     question_bank["questions"].remove(selected_question)
 
     return q
 
-
-def buzzing():
-    pass
-
-#Token functions-------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
@@ -400,32 +372,28 @@ if __name__ == "__main__":
     PlayerNumber = {}
     question_bank = load_question_bank()
 
-
-    ready_clients = [False, False, False, False, False]
     message_queue = Queue() # locks are already built in to Queue class
     recieve_connections_thread = Recieve_Connection_Thread(server, message_queue)
     recieve_connections_thread.start()
 
-    #### Lobby loop ------------------------------------------------------------------
-    host_found = False
-    all_ready = False
+#### Lobby Loop ==========================================================================================
 
     #### Internal Lobby states and values
+    lobby_loop = True
     host = None
-    total_votes = 0
     lobby = lobby_state.Lobby(player_list=get_all_players())
 
-    while not (all_ready and host_found):
-        #gets the message and its coresponding sender adderess
+    while lobby_loop:
+        # gets the message and its coresponding sender adderess
         message, addr = message_queue.get()
        
-        #### Information about the Sender
+        # Information about the Sender
         sender_id = PlayerNumber[addr][0]
         client = clients[sender_id]
         print(f"Recieved message from {sender_id} @ {addr}: {message}\n")
 
+        #Token Parse------------------------------------------------------------------
 
-        #### application layer protocol for lobby (Parse Tokens)
         tokens = message.split('-')
 
         if (tokens[0] == "Req_Data"):
@@ -452,35 +420,27 @@ if __name__ == "__main__":
             clients[int(host.id)].player_data.is_host = True
             send_Host_To_All_Clients(host)
             lobby.update_state("HOST_FOUND")
-            host_found = True
 
         # current_state = lobby.get_state()
         if lobby.state_changed() and lobby.last_state != "WAIT":
             send_state_update("Lobby", current_state, to_all=True)
 
         if(current_state == "START_GAME"):
-            send_Start_Game_To_All_Clients()
-           # time.sleep(10)
             break
-
-    #Token Parse------------------------------------------------------------------
 
     # close ability to connect
    
     recieve_connections_thread.stop()
     recieve_connections_thread.join()
 
-
-
     # send info to clients that main game has started
-    # ...
+    send_Start_Game_To_All_Clients()
 
     # set up the timer thread for buzzing
     event = threading.Event()
     time_thread = threading.Thread(target=buzz_timer, args=(message_queue,))
 
-   #Game Loop==========================================================================================
-    # main game loop
+#### Game Loop ==========================================================================================
     game_loop = True
     question_init = False
     host_voted = False
@@ -489,11 +449,12 @@ if __name__ == "__main__":
     new_question = False
     current_state = "SENDING_QUESTION"
 
+    # Initialize Game object that represents the internal Game state
     if host != None:
         game = game_state.Game(host, player_list=get_all_players())
     else:
         game = None
-        print("ERROR starting new game: host not found")
+        print("ERROR starting new Game: host not found")
 
     while game_loop:
 
@@ -530,10 +491,9 @@ if __name__ == "__main__":
         client = clients[sender_id]
         print(f"Recieved message from {sender_id} @ {addr}: {message}\n")
 
-        #### application layer protocol for lobby (Parse Tokens)
+        #Token Parse------------------------------------------------------------------
         tokens = message.split('-')
 
-        #### Handle Requests for Data from Sender
         if (tokens[0] == "Req_Data"):
             data_type = tokens[1]
             request = tokens[2]
@@ -624,11 +584,6 @@ if __name__ == "__main__":
             else:
                 print("(Host_Choice) error, unrecognized input")
 
-            # # host_voted = True
-            # if(tokens[1] == "Y"):
-            # #    give_player_point = True
-            # else:
-            # #    give_player_point = False
 
         elif (tokens[0] == "Answer"):
             answer_str = str(tokens[1])
@@ -646,8 +601,7 @@ if __name__ == "__main__":
                 answer_came = False
             
         elif (tokens[0] == "Received_Question"):
-
-            #whoever sends this must have their player.received_question set to true and will be changed once the waiting for buzz state is entered
+            # Confirmation that Sender has received the question
             clients[sender_id].player_data.received_question = True
         
         #### Update internal Game State
@@ -658,12 +612,11 @@ if __name__ == "__main__":
             send_state_update("Game", current_state, to_all=True)
 
         if current_state == "SENDING_QUESTION" and question_init == False:
-            game.current_question = send_question(question_bank)
+            game.current_question = get_next_question(question_bank)
             question_init = True
         elif current_state == "WAITING_FOR_BUZZ":
             clear_received_question()
         elif(current_state == "END_GAME"):
-           # time.sleep(10)
             break
-
-        #Token Parse------------------------------------------------------------------
+    
+    ## TODO: at the end of gameloop, send all clients final copy of the player list for scoreboard

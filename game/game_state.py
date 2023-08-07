@@ -79,6 +79,7 @@ class Game():
         return "Game_INVALID_STATE_GAME"
         
     
+## DEPRECATED-> moved into Game class so that you don't have to keep passing in player_list each time
 def get_state(players, last_state):
     nplayers = len(players)
     
