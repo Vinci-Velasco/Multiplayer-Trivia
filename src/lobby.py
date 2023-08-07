@@ -20,11 +20,12 @@ def init_lobby(s):
             st.session_state.players = {}
             st.session_state.total_votes = 0
             st.session_state.total_ready = 0
+            st.session_state.min_players = False
         if 'my_player' not in st.session_state:
             pass
         if "lobby_state" not in st.session_state:
             st.session_state.lobby_state = "INIT"
-        # else:
+            
         st.session_state.i_voted = False
         st.session_state.im_ready = False
         client.req_data_from_server(s, "my_id")

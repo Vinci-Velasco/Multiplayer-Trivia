@@ -122,6 +122,19 @@ def update_data(label, data):
             st.session_state.ready_up = True
             
 ## GAME LOOP DATA Loop --------------------------
+    elif label == "Timeout":
+        id = int(data)
+        if 'buzzer_id' in st.session_state and st.session_state.buzzer_id == id:
+            players = st.session_state.players
+
+            # Remove lock from player
+            players[id].has_lock == False
+            st.session_state.buzzer_locked = False
+            st.session_state.buzzer_id = None
+            
+            if players[id].is_me:
+                st.session_state.my_buzzer = False
+        
     elif label == "Question":
         question = pickle.loads(data)
         st.session_state.current_question = question
@@ -139,6 +152,7 @@ def update_game_state(game_state):
     
     elif game_state == "WAITING_FOR_BUZZ":
         # this is the only time buzzer should be open
+        st.session_state.answer_phase = False
         st.session_state.buzzer_phase = True
     
     elif game_state == "SOMEONE_BUZZED":
@@ -158,17 +172,16 @@ def update_lobby_state(lobby_state):
 
     elif lobby_state == "VOTE":
         # minimum players are in lobby, start voting phase
-        if 'min_players' in st.session_state and st.session_state.min_players == False:
+        if st.session_state.min_players == False:
             st.session_state.min_players = True
-        else:
-            st.session_state.min_players = True
+  
     elif lobby_state == "HOST_FOUND":
-        if 'min_players' not in st.session_state:
+        if st.session_state.min_players == False:
             st.session_state.min_players = True
         if 'host_id' in st.session_state:
             st.session_state.ready_up = True 
     elif lobby_state == "READY_UP":
-        if 'min_players' not in st.session_state:
+        if st.session_state.min_players == False:
             st.session_state.min_players = True
 
         if ('host_id' in st.session_state) and 'ready_up' not in st.session_state:

@@ -13,7 +13,7 @@ def draw_lobby(cols, players, vote_callback, ready_callback):
     cols[1].subheader('Players')
     cols[2].subheader('Status')
 
-    if 'min_players' in st.session_state:
+    if st.session_state.min_players == True:
         if 'ready_up' not in st.session_state:
             cols[3].subheader('Vote Host')
         else:
@@ -34,7 +34,7 @@ def draw_lobby(cols, players, vote_callback, ready_callback):
         with cols[2]:
             if p.disconnected == True:
                 st.write("Disconnected")
-            elif 'min_players' not in st.session_state:
+            elif st.session_state.min_players == False :
                 st.write("Waiting...")
             elif p.already_voted == False:
                 st.write("Voting...")
@@ -46,7 +46,7 @@ def draw_lobby(cols, players, vote_callback, ready_callback):
                 st.write('Waiting for game to start...')
 
         ## Populate buttons
-        if 'min_players' not in st.session_state:
+        if st.session_state.min_players == False:
             continue
         elif 'ready_up' not in st.session_state:
             # Vote buttons

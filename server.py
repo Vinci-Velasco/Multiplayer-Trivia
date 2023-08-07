@@ -11,7 +11,7 @@ from src.question_bank import Question
 from game import lobby_state, game_state
 
 HOST = "127.0.0.1"
-PORT = 7072
+PORT = 7078
 
 clients = {} # key: id - value: Client
 
@@ -41,7 +41,6 @@ def listening_thread(client_socket, addr, message_queue):
                     for m in message.split("\n"):
                         if m != "":
                             message_queue.put((m, addr))
-                    print(f"Recieved message from {addr}: {message}\n")
 
 # Custom thread class that creates new threads once connections come in
 class Recieve_Connection_Thread(threading.Thread):
@@ -157,9 +156,6 @@ def allPlayersReady(ready_clients):
 
         index += 1
     return proceedOrNot
-
-def received_question_confirmation(sender_id):
-    clients[sender_id].player_data.received_question = True
 
 
 def clear_received_question():
@@ -304,6 +300,13 @@ def parse_data_req(client, request, send_to_all=False):
         if current_question != None:
             data = current_question
             serialize = True
+    elif request == "game_state":
+        game.update_players(player_list=get_all_players())
+        print("game_state: getting state")
+        game_state = lobby.get_state()
+        print(f"game_state: sending state to all -> {game_state}")
+        send_state_update("Game", game_state, to_all=True)
+        return 
     
     # Serialize data if needed
     if serialize == True:
@@ -413,10 +416,12 @@ if __name__ == "__main__":
     while not (all_ready and host_found):
         #gets the message and its coresponding sender adderess
         message, addr = message_queue.get()
-
+       
         #### Information about the Sender
         sender_id = PlayerNumber[addr][0]
         client = clients[sender_id]
+        print(f"Recieved message from {sender_id} @ {addr}: {message}\n")
+
 
         #### application layer protocol for lobby (Parse Tokens)
         tokens = message.split('-')
@@ -446,8 +451,9 @@ if __name__ == "__main__":
             send_Host_To_All_Clients(host)
             lobby.update_state("HOST_FOUND")
             host_found = True
-        current_state = lobby.get_state()
-        if lobby.state_changed():
+
+        # current_state = lobby.get_state()
+        if lobby.state_changed() and lobby.last_state != "WAIT":
             send_state_update("Lobby", current_state, to_all=True)
 
         if(current_state == "START_GAME"):
@@ -498,14 +504,17 @@ if __name__ == "__main__":
         #enter if the answer timer ran out and someone actually buzzed in
         if message == "Timeout" and get_playerid_who_has_lock() is not None:
 
-            send_message_to_all("Send_Data", "Timeout", "timeout occured")
+            lock_id = get_playerid_who_has_lock()
 
-            #player who has lock loses it
-            clients[get_playerid_who_has_lock()].player_data.has_lock = False
+            # Timeout all clients, remove lock for players[lock_id]
+            send_message_to_all("Send_Data", "Timeout", lock_id)
 
-            #we go back to buzzing stage to so others can get a chance to buzz
-            print("Back to buzz!")
-            current_state = "WAITING_FOR_BUZZ"
+            clients[lock_id].player_data.has_lock = False
+
+            # return to buzzer state
+            print("Back to buzzer state!")
+            current_state = game.update_state("WAITING_FOR_BUZZ")
+            send_state_update("Game", current_state, to_all=True)
 
             event = threading.Event()
             time_thread = threading.Thread(target=buzz_timer, args=(message_queue,))
@@ -516,6 +525,7 @@ if __name__ == "__main__":
         #### Information about the Sender
         sender_id = PlayerNumber[addr][0]
         client = clients[sender_id]
+        print(f"Recieved message from {sender_id} @ {addr}: {message}\n")
 
         #### application layer protocol for lobby (Parse Tokens)
         tokens = message.split('-')
@@ -652,24 +662,20 @@ if __name__ == "__main__":
         elif (tokens[0] == "Received_Question"):
 
             #whoever sends this must have their player.received_question set to true and will be changed once the waiting for buzz state is entered
-            received_question_confirmation(sender_id)
+            clients[sender_id].player_data.received_question = True
         
         #### Update internal Game State
         game.update_players(player_list=get_all_players())
         current_state = game.get_state()
-        
 
         if game.state_changed():
             send_state_update("Game", current_state, to_all=True)
 
-        if(current_state == "END_GAME"):
+        if current_state == "SENDING_QUESTION" and question_init == False:
+            game.current_question = send_question(question_bank)
+            question_init = True
+        elif(current_state == "END_GAME"):
            # time.sleep(10)
             break
-        elif current_state == "SENDING_QUESTION" and question_init == False:
-            game.current_question = send_question(question_bank)
-            send_state_update("Game", current_state, to_all=True)
-            question_init = True
-        
-
 
         #Token Parse------------------------------------------------------------------
