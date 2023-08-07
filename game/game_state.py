@@ -18,6 +18,17 @@ class Game():
     def update_players(self, player_list):
         self.player_list = player_list
     
+
+    def state_changed(self):
+        return not self.last_state == self.current_state
+
+    def did_someone_buzz(self, player_list):
+        for p in player_list:
+            if p.has_lock == True:
+                return True
+
+        return False 
+    
     #### Get current state of Lobby
     def get_state(self):
         state = self.current_state
@@ -27,13 +38,12 @@ class Game():
         if state == "END_GAME":
             return "END_GAME"
         
-
 #Server will send out the question in this state to everyoe
         elif state == "SENDING_QUESTION":     
             total_views = did_all_players_view_question(player_list)
 
             if total_views < num_players:
-                return "SENDING_QUESTION"
+                return self.update_state("SENDING_QUESTION")
             else:
                 return self.update_state("WAITING_FOR_BUZZ")
             
@@ -41,12 +51,12 @@ class Game():
             if self.did_someone_buzz(player_list) == True:
                 return self.update_state("SOMEONE_BUZZED")
             else:
-                return "WAITING_FOR_BUZZ"
+                return self.update_state("WAITING_FOR_BUZZ")
         
             #not really needed as a state but makes in easier to comprehend what is happening in the game
         elif state == "SOMEONE_BUZZED":
 
-            return "WAITING_FOR_ANSWER"
+            return self.update_state("WAITING_FOR_ANSWER")
     
         #server should start a timer thread during this statge 
         elif state == "WAITING_FOR_ANSWER":
@@ -82,14 +92,6 @@ class Game():
     
         return "Game_INVALID_STATE_GAME"
         
-    def did_somone_buzz(self, player_list):
-        for p in player_list:
-            if p.has_lock == True:
-                return True
-
-        return False 
-
-
     
 #### Get current state of game
 def get_state(players, last_state):
@@ -167,7 +169,6 @@ def did_all_players_view_question(players):
     return total_views
 
 def did_somone_buzz(players):
-
     for p in players:
         if p.has_lock == True:
             return True

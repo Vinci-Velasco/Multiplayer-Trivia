@@ -11,7 +11,7 @@ from src.question_bank import Question
 from game import lobby_state, game_state
 
 HOST = "127.0.0.1"
-PORT = 7070
+PORT = 7076
 
 clients = {} # key: id - value: Client
 
@@ -163,7 +163,7 @@ def received_question_confirmation(sender_id):
 
 
 def clear_received_question():
-    for c in clients.values:
+    for c in clients.values():
          c.player_data.received_question = False
 
 def get_playerid_who_has_lock():
@@ -238,6 +238,8 @@ def send_message_to_all(header, label, data, except_id=-1):
             print(f"....sending message to Client from all {c.id}:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
             if sent == False:
                 sent = True
+        else:
+            print(f"did not send to {c.id}")
 
     if sent:
 
@@ -363,7 +365,7 @@ def send_question(question_bank):
     # avoid repeat questions
     question_bank["questions"].remove(selected_question)
 
-    return selected_question
+    return q
 
 
 def buzzing():
@@ -469,6 +471,7 @@ if __name__ == "__main__":
    #Game Loop==========================================================================================
     # main game loop
     game_loop = True
+    question_init = False
     host_voted = False
     answer_came = False
     give_player_point = False
@@ -488,8 +491,11 @@ if __name__ == "__main__":
             game.update_state("END_GAME")
             break
 
+        if current_state == "SENDING_QUESTION" and question_init == False:
+            game.current_question = send_question(question_bank)
+            question_init = True
+
         message, addr = message_queue.get()
-        print(message)
 
         #enter if the answer timer ran out and someone actually buzzed in
         if message == "Timeout" and get_playerid_who_has_lock() is not None:
@@ -527,11 +533,10 @@ if __name__ == "__main__":
 
             all_players = get_all_players()
 
-            if current_state == "SENDING_QUESTION":
-                game.current_question = send_question(question_bank)
+            # if current_state == "SENDING_QUESTION":
+            #     game.current_question = send_question(question_bank)
 
-            elif current_state == "WAITING_FOR_BUZZ":
-
+            if current_state == "WAITING_FOR_BUZZ":
                 #this sets everyone's recieved_question variable back to false
                 clear_received_question()
 
@@ -650,6 +655,20 @@ if __name__ == "__main__":
 
             #whoever sends this must have their player.received_question set to true and will be changed once the waiting for buzz state is entered
             received_question_confirmation(sender_id)
+        
+        #### Update internal Game State
+        game.update_players(player_list=get_all_players())
+        current_state = game.get_state()
+        
+
+        if game.state_changed():
+            send_state_update("Game", current_state, to_all=True)
+
+        if(current_state == "END_GAME"):
+           # time.sleep(10)
+            break
+        
+
 
 
         #Token Parse------------------------------------------------------------------

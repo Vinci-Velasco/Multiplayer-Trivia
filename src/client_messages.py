@@ -34,6 +34,9 @@ def update_player(update, player_data):
 
 ## Store incoming data into Streamlit session state
 def update_data(label, data):
+    if data == None or label == None:
+        return
+
     if label == "my_id":
             my_id = int(data)
             st.session_state.my_id = my_id
@@ -109,20 +112,20 @@ def update_data(label, data):
             st.session_state.host_id = host_id
             st.session_state.ready_up = True
             
-## GAME LOOP DATA --------------------------
+## GAME LOOP DATA Loop --------------------------
     elif label == "Question":
         question = pickle.loads(data)
         st.session_state.current_question = question
-        # Send Question Confirmation
-        st.session_state.my_player.received_question = True
-        client.send_data_to_server("Received_Question", "")
 
     else:
         print(f"Error in Game! received unrecognized Send_Data label: {label}")
     
 def update_game_state(game_state):
     if game_state == "SENDING_QUESTION":
-        pass
+        if 'current_question' in st.session_state and st.session_state.current_question != None:
+            # Send Question Confirmation to server
+            client.send_data_to_server(st.session_state.my_socket, "Received_Question", "")
+            st.session_state.my_player.received_question = True
 
     st.session_state.game_state = game_state
 
@@ -151,7 +154,9 @@ def update_lobby_state(lobby_state):
 
         if ('host_id' in st.session_state) and 'ready_up' not in st.session_state:
             st.session_state.ready_up = True
+
     elif lobby_state == "START_GAME":
+        print("Start Game!")
         st.session_state.ready_up_over = True
 
     elif lobby_state == "SENDING_QUESTION":

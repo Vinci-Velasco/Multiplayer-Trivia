@@ -82,9 +82,12 @@ def draw_game_title():
     elif st.session_state.answer_phase:
         st.title('Your turn!') 
 
-    question = st.session_state.current_question
-    st.header(f"Q{question.id}. {question.question}")
-    
+    if ('current_question' in st.session_state) and (st.session_state.current_question != None):
+        question = st.session_state.current_question
+        st.header(f"Q{question.id}. {question.question}")
+    else:
+        st.header("Loading question...")
+
 def draw_game(buzzer_callback):
     global cols
     c1, c2, c3 = st.columns(3, gap="large")

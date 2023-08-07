@@ -15,8 +15,7 @@ def init_game():
     st.session_state.my_turn = True
 
     if 'current_question' not in st.session_state:
-        st.session_state.current_question = None
-
+        client.req_data_from_server(st.session_state.my_socket, "Question")
 
 def buzzer_callback():
     st.session_state.buzzer_phase = False
@@ -25,8 +24,8 @@ def buzzer_callback():
 def main():
     if 'current_question' not in st.session_state:
         init_game()
-    elif st.session_state.current_question == None:
-        client.req_data_from_server(st.session_state.my_socket, "Question")
+    # elif st.session_state.current_question == None:
+    #     client.req_data_from_server(st.session_state.my_socket, "Question")
     else:
         gui.draw_game_title()
         if st.session_state.im_host == True:
