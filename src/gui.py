@@ -76,6 +76,15 @@ def draw_lobby(cols, players, vote_callback, ready_callback):
 
     return cols
 
+def draw_game_title():
+    if st.session_state.host_phase:
+        st.title("Host is checking answer...")
+    elif st.session_state.answer_phase:
+        st.title('Your turn!') 
+
+    question = st.session_state.current_question
+    st.header(f"Q{question.id}. {question.question}")
+    
 def draw_game(buzzer_callback):
     global cols
     c1, c2, c3 = st.columns(3, gap="large")
@@ -94,7 +103,7 @@ def draw_host_game():
     cols = { 1: c1, 2: c2, 3: c3}
 
     if st.session_state.buzzer_phase:
-        st.subheader("You are the host")
+        st.write("You are the host")
     elif st.session_state.answer_phase:
         st.subheader("You are the host, someone is answering")
     elif st.session_state.host_phase:

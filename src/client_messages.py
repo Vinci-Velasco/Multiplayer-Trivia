@@ -1,6 +1,7 @@
 # functions to parse incoming messages to the Client, load the Data, and update Streamlit's session state
 import pickle
 import streamlit as st
+import client
 
 ## update a Player in the game
 def update_player(update, player_data):
@@ -112,6 +113,9 @@ def update_data(label, data):
     elif label == "Question":
         question = pickle.loads(data)
         st.session_state.current_question = question
+        # Send Question Confirmation
+        st.session_state.my_player.received_question = True
+        client.send_data_to_server("Received_Question", "")
 
     else:
         print(f"Error in Game! received unrecognized Send_Data label: {label}")

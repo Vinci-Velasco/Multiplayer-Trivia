@@ -435,7 +435,7 @@ if __name__ == "__main__":
         current_state = lobby.get_state()
         
         # Additionally calculate host and broadcast to all clients
-        if  current_state == "FIND_HOST" and lobby.host_found() == False:
+        if current_state == "FIND_HOST" and lobby.host_found() == False:
             host = lobby.calculate_host()
             global players
             clients[int(host.id)].player_data.is_host = True
@@ -483,8 +483,9 @@ if __name__ == "__main__":
 
     while game_loop:
 
-        # no more questions left
+        # End Game when no more questions left
         if len(question_bank) == 0:
+            game.update_state("END_GAME")
             break
 
         message, addr = message_queue.get()
@@ -520,22 +521,11 @@ if __name__ == "__main__":
         if (tokens[0] == "Req_Data"):
             data_type = tokens[1]
             request = tokens[2]
-
             
-            #current_state = parse_data_req(client, current_state, request)
-            if(request == "lobby_state"):
-                continue
+            if request != "lobby_state":
+                parse_data_req(client, request)
+
             all_players = get_all_players()
-
-            #PRINTING FOR TESTING - REMOVE IF NEEDED
-            # print("------Who HAS the lock (for testing)---------------\n")
-            # print((f"#1: {all_players[0].has_lock}\n"))
-            # print((f"#2: {all_players[1].has_lock}\n"))
-            # print((f"#3: {all_players[2].has_lock}\n"))
-            # print("=====================\n")
-            # last_state = current_state
-            # current_state = game_state.get_state(all_players, last_state)
-
 
             if current_state == "SENDING_QUESTION":
                 game.current_question = send_question(question_bank)
