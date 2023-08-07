@@ -389,7 +389,11 @@ def buzzing():
 if __name__ == "__main__":
     # setup server socket
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # SOCK_STREAM = TCP
-    server.bind((HOST, PORT))
+    sererName = socket.gethostname()   
+    serverIP = socket.gethostbyname(sererName)   
+    print("The server's IP is:"+serverIP)  
+
+    server.bind((serverIP, PORT))
     server.listen()
 
     # data structures to hold client sockets and message queue so main can communicate with listening threads and vice versa
