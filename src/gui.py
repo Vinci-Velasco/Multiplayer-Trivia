@@ -117,7 +117,8 @@ def draw_game(buzzer_callback):
         st.write("Waiting for Host to verify answer...")
     
     else:
-        st.spinner("Loading...")
+        with st.spinner("Loading..."):
+            time.sleep(0.2)
     
     return cols
 
@@ -149,33 +150,26 @@ def player_turn():
         sent = True
         # Clear input box
         input_container.empty()
-        st.info(f"answer: \"{answer}\"")
+        st.info(f"sent answer: \"{answer}\"")
     
 def host_turn():
     question = st.session_state.current_question
-    st.subheader(f"Player wrote: \"{st.session_state.player_answer}\"") 
-    if st.session_state.host_id == st.session_state.my_id:
-        st.write(f"Correct Answer: {question.answer}") 
-        c1, c2 = st.columns(2)
-        correct = c1.button("✅ Correct", use_container_width=True)
-        incorrect = c2.button("❌ Incorrect", use_container_width=True)
-        # TODO: update player scores
-        if correct:
-            st.success("Correct!")
 
-            send_data_to_server(st.session_state.my_socket, "Host_Choice", "y") 
-            time.sleep(1)
-            st.session_state.host_phase = False
-            st.session_state.buzzer_phase = True
-            # remove correct question from question bank
-            question = st.session_state.current_question
-            st.session_state.qb.remove(question)
-            del st.session_state['current_question']
-            st.experimental_rerun()
-        if incorrect:
-            st.error("Wrong answer")
-            send_data_to_server(st.session_state.my_socket, "Host_Choice", "n")
-            time.sleep(1)
-            st.session_state.host_phase = False
-            st.session_state.buzzer_phase = True
-            st.experimental_rerun()
+    st.subheader(f"Player wrote: \"{st.session_state.player_answer}\"") 
+    st.write(f"Correct Answer: {question.answer}") 
+
+    # Draw Correct/Incorrect buttons
+    c1, c2 = st.columns(2)
+    correct = c1.button("✅ Correct", use_container_width=True)
+    incorrect = c2.button("❌ Incorrect", use_container_width=True)
+    # TODO: update player scores
+
+    if correct:
+        st.success("Correct!")
+
+        send_data_to_server(st.session_state.my_socket, "Host_Choice", "y") 
+        # TODO: get next question from server
+    
+    if incorrect:
+        st.error("Wrong answer")
+        send_data_to_server(st.session_state.my_socket, "Host_Choice", "n")
