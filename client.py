@@ -60,7 +60,7 @@ def req_data_from_server(s, request):
     print(f"...sending message to server: {message}\n")
     s.sendall(message.encode('utf8'))
 
-def send_data_to_server(s, header, data):
+def send_data_to_server(s, header, data=""):
     message = f"{header}-{data}\n"
     print(f"...sending message to server: {message}\n")
     s.sendall(message.encode('utf8'))

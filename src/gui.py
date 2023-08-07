@@ -106,13 +106,15 @@ def draw_game(buzzer_callback):
 
     ## Start Answer phase when some player has_lock
     elif st.session_state.answer_phase == True and st.session_state.buzzer_locked == True:
-            if st.session_state.my_buzzer == True:
+            buzzer_id = st.session_state.buzzer_id
+            if buzzer_id == st.session_state.my_id:
                 player_turn()
             else:
-                st.write("Waiting...")
+                st.write(f"Player {buzzer_id} has the buzzer. Waiting...")
             
     elif st.session_state.host_phase == True:
-        "You are the player, waiting for host to verify"
+        host_turn()
+        # "You are the player, waiting for host to verify"
 
 def draw_host_game():
     global cols
