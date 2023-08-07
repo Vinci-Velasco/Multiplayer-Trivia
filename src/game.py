@@ -15,8 +15,10 @@ def init_game():
         st.session_state.game_state = "INIT"
 
         st.session_state.buzzer_phase = False
+        # TODO remove answer_phase because its logically the same as buzzer_locked tbh
         st.session_state.answer_phase = False
         st.session_state.host_phase = False
+        st.session_state.player_answer = "Null"
 
         st.session_state.buzzer_locked = False
         st.session_state.buzzer_id = None

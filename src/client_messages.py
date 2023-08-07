@@ -124,13 +124,12 @@ def update_data(label, data):
 ## GAME LOOP DATA Loop --------------------------
     elif label == "Timeout":
         id = int(data)
-        if 'buzzer_id' in st.session_state and st.session_state.buzzer_id == id:
+        if st.session_state.buzzer_locked == True and st.session_state.buzzer_id == id:
             players = st.session_state.players
 
             # Remove lock from player
             players[id].has_lock == False
             st.session_state.buzzer_locked = False
-            st.session_state.buzzer_id = None
             
             if players[id].is_me:
                 st.session_state.my_buzzer = False
@@ -153,10 +152,11 @@ def update_game_state(game_state):
     elif game_state == "WAITING_FOR_BUZZ":
         # this is the only time buzzer should be open
         st.session_state.answer_phase = False
+        st.session_state.buzzer_locked = False
         st.session_state.buzzer_phase = True
     
     elif game_state == "SOMEONE_BUZZED":
-        if 'buzzer_id' in st.session_state and st.session_state.buzzer_id != None: 
+        if st.session_state.buzzer_locked == True: 
             st.session_state.buzzer_phase = False
             st.session_state.answer_phase = True
 
@@ -196,3 +196,14 @@ def update_lobby_state(lobby_state):
         pass
 
     st.session_state.lobby_state = lobby_state
+
+
+def update_host_client(label, data):
+    if 'im_host' in st.session_state and st.session_state.im_host == True:
+        if label == "player_answer":
+            player_answer = str(data)
+            st.session_state.player_answer = player_answer
+
+    else:
+        my_id = st.session_state.my_id
+        print(f"error: host data sent to client {my_id}")

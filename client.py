@@ -87,6 +87,12 @@ def parse_message(message):
             client_messages.update_lobby_state(state_data)
         elif label == "Game" and 'game_start' in st.session_state:
             client_messages.update_game_state(state_data)
+    
+    elif message['header'] == "Host_Verify":
+        label = message['label']
+        data = message['data']
+
+        client_messages.update_host_client(label, data)
     else:
         print("LOL FAIL")
 

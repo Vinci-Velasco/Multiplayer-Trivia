@@ -12,7 +12,6 @@ class Player():
         self.disconnected = False
         self.received_question = False
         self.has_lock = False
-        self.entered_game_lobby = False
 
     def increaseScore(self):
         self.score += 1

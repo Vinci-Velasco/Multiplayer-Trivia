@@ -81,11 +81,11 @@ def draw_game_title():
         st.title("Host is checking answer...")
 
     elif st.session_state.answer_phase:
-        if st.session_state.buzzer_id != None:
+        if st.session_state.buzzer_locked == True:
             if st.session_state.my_buzzer == True:
                st.title("Your turn!") 
             else:
-               st.title(f"Player {st.session_state.buzzer_id} has the buzzer...")
+               st.title(f"Player {st.session_state.buzzer_id} has the buzzer!")
         else:
             st.title("Someone buzzed!")
 
@@ -105,12 +105,12 @@ def draw_game(buzzer_callback):
         cols[2].button('Buzzer', on_click=buzzer_callback, use_container_width=True)
 
     ## Start Answer phase when some player has_lock
-    elif st.session_state.answer_phase == True:
-        if st.session_state.buzzer_id != None:
+    elif st.session_state.answer_phase == True and st.session_state.buzzer_locked == True:
             if st.session_state.my_buzzer == True:
                 player_turn()
+            else:
+                st.write("Waiting...")
             
-        ## TODO: else request buzzer_id from server?
     elif st.session_state.host_phase == True:
         "You are the player, waiting for host to verify"
 
@@ -127,18 +127,16 @@ def draw_host_game():
         host_turn()
 
 def player_turn():
-    # TODO: check if my_id = buzzer_holder
     input = cols[2].text_input("Type your answer here")
     if input:
-        # check answer with host
-        st.session_state.last_answer = input
-        st.session_state.answer_phase = False
-        st.session_state.host_phase = True
-        st.experimental_rerun()
+        # Callback when player enters an answer
+        st.session_state.player_answer = input
+        client.send_data_to_server(st.session_state.my_socket, "Answer", input)
+        # st.session_state.host_phase = True st.experimental_rerun()
     
 def host_turn():
     question = st.session_state.current_question
-    st.subheader(f"Player wrote: \"{st.session_state.last_answer}\"") 
+    st.subheader(f"Player wrote: \"{st.session_state.player_answer}\"") 
     if st.session_state.host_id == st.session_state.my_id:
         st.write(f"Correct Answer: {question.answer}") 
         c1, c2 = st.columns(2)

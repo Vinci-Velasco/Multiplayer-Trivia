@@ -239,8 +239,7 @@ def send_message_to_all(header, label, data, except_id=-1):
         else:
             print(f"(send_message_to_all) skipped {c.id}")
 
-    if sent:
-
+    if sent: # Print to console if successful
         to_console = str(data)[:10] + "..."
         print("....sent message to all clients:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
 
@@ -323,21 +322,14 @@ def send_Host_To_All_Clients(host):
 def send_Start_Game_To_All_Clients():
     send_message_to_all("Send_Data", "lobby_state", "START_GAME")
 
-def hostChoice():
-    pass
-
 def add_host_vote(client, vote_id):
     clients[vote_id].player_data.votes += 1
     clients[client.id].player_data.already_voted = True
     # update all clients that this client has voted
     send_player_update_to_all("Already_Voted", client.id)
 
-def voteHost():
-    pass
-
-
 # Send answer from player to host so the host can confirm if the answer is correct. Returns True if it went through, False otherwise
-def answer(sender_id, event, message):
+def answer(sender_id, event, data):
     # ensure if the person who sent the answer token actually has the lock
     if sender_id != get_playerid_who_has_lock():
         print(f"Answer from {sender_id} rejected")
@@ -346,9 +338,7 @@ def answer(sender_id, event, message):
     # send answer to host
     host_client = get_host()
 
-    send_message_to_client(host_client, "Host_Verify", "player_answer", message)
-
-    # send_data_to_client(host_client, "String", message)
+    send_message_to_client(host_client, "Host_Verify", "player_answer", data)
 
     # stop timer thread
     event.set()
@@ -541,26 +531,7 @@ if __name__ == "__main__":
 
             all_players = get_all_players()
 
-            # if current_state == "SENDING_QUESTION":
-            #     game.current_question = send_question(question_bank)
-
-            if current_state == "WAITING_FOR_BUZZ":
-                #this sets everyone's recieved_question variable back to false
-                clear_received_question()
-
-
-            elif current_state == "WAITING_FOR_ANSWER":
-
-                #remove this when timer stuff gets added
-
-                if(answer_came):
-                    current_state = "GOT_ANSWER"
-                    answer_came = False
-                else:
-                    current_state = "WAITING_FOR_ANSWER"
-
-
-            elif current_state == "WAITING_FOR_HOSTS_CHOICE":
+            if current_state == "WAITING_FOR_HOSTS_CHOICE":
 
                 #host_voted gets updated when a host_vote token is parsed
                 if(host_voted == False):
@@ -659,6 +630,9 @@ if __name__ == "__main__":
             if answer_came:
                 time_thread = threading.Thread(target=buzz_timer, args=(message_queue,))
 
+                game.update_state("WAITING_FOR_HOSTS_CHOICE")
+                answer_came = False
+            
         elif (tokens[0] == "Received_Question"):
 
             #whoever sends this must have their player.received_question set to true and will be changed once the waiting for buzz state is entered
@@ -674,6 +648,8 @@ if __name__ == "__main__":
         if current_state == "SENDING_QUESTION" and question_init == False:
             game.current_question = send_question(question_bank)
             question_init = True
+        elif current_state == "WAITING_FOR_BUZZ":
+            clear_received_question()
         elif(current_state == "END_GAME"):
            # time.sleep(10)
             break
