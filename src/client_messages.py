@@ -212,4 +212,4 @@ def update_host_client(label, data):
 
     else:
         my_id = st.session_state.my_id
-        print(f"error: host data sent to client {my_id}")
+        print(f"error: host data was sent to non-host client {my_id}")
