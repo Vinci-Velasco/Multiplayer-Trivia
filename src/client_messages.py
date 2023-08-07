@@ -24,6 +24,10 @@ def update_player(update, player_data):
                 st.session_state.total_ready += 1
             elif update == "Is_Host":
                 players[id].is_host = True
+                if players[id].is_me:
+                    st.session_state.im_host = True
+                else:
+                    st.session_state.im_host = False
             elif update == "Score":
                 players[id].score += 1
 
@@ -90,6 +94,11 @@ def update_data(label, data):
                     p.is_host = True
                     st.session_state.host_player = p
                     print("found host")
+
+                    if p.is_me:
+                        st.session_state.im_host = True
+                    else:
+                        st.session_state.im_host = False
 
                     host_found = True
                     break

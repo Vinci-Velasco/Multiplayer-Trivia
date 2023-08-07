@@ -11,7 +11,7 @@ from src.question_bank import Question
 from game import lobby_state, game_state
 
 HOST = "127.0.0.1"
-PORT = 7074
+PORT = 7070
 
 clients = {} # key: id - value: Client
 

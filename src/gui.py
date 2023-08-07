@@ -85,6 +85,18 @@ def draw_game(buzzer_callback):
     elif st.session_state.answer_phase:
         player_turn()
     elif st.session_state.host_phase:
+        "You are the player, waiting for host to verify"
+
+def draw_host_game():
+    global cols
+    c1, c2, c3 = st.columns(3, gap="large")
+    cols = { 1: c1, 2: c2, 3: c3}
+
+    if st.session_state.buzzer_phase:
+        st.subheader("You are the host")
+    elif st.session_state.answer_phase:
+        st.subheader("You are the host, someone is answering")
+    elif st.session_state.host_phase:
         host_turn()
 
 def player_turn():
