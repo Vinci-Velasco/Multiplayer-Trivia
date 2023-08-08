@@ -187,6 +187,9 @@ def draw_host_game():
 
     elif st.session_state.host_phase == True:
         host_turn()
+    else:
+        with st.spinner("Loading..."):
+            time.sleep(0.2)
         
 def player_turn():
     with cols[2]:

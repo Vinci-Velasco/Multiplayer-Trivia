@@ -228,11 +228,11 @@ def send_message_to_all(header, label, data, except_id=-1):
         else:
             print(f"(send_message_to_all) skipped {c.id}")
     
-    time.sleep(0.1)
-
     if sent: # Print to console if successful
         to_console = str(data)[:10] + "..."
         print("....sent message to all clients:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
+
+    time.sleep(0.1)
 
 
 #### Send an update to all clients about a specific Player
