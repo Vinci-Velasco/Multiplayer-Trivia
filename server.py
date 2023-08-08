@@ -200,6 +200,23 @@ def get_host():
 
     return None
 
+#find out the ID of who won the game
+def find_out_who_won(players):
+
+    for p in players:
+        
+        if p.score == 10:
+            return p.id
+
+#send everyone's final scores to everyone at end of game 
+def send_everyones_scores(players):
+
+    for p in players:
+
+        #label is set to the player ID
+        send_message_to_all("Final_Score", p.id, p.score)
+
+
 #Token functions-------------------------------------------------------------------------------------
 
 
