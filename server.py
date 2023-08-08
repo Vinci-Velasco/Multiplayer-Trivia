@@ -179,6 +179,7 @@ def buzz_timer(message_queue):
 
     # thread is no longer needed when answer is recieved and terminates normally
     if event.wait(TIMER):
+        print("good")
         return
 
     # no answer recived, so timeout message sent to message queue to communicate to the main thread
@@ -588,6 +589,7 @@ if __name__ == "__main__":
 
             # re-create thread instance (needed to start a new timer thread again for the future)
             if answer_came == True:
+                event = threading.Event()
                 time_thread = threading.Thread(target=buzz_timer, args=(message_queue,))
 
                 answer_came = False
