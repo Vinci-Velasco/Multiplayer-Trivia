@@ -36,13 +36,15 @@ def update_queue(message_queue):
         try:
             if 'my_socket' not in st.session_state:
                 break
-            message = message_queue.get(block=True)
+            message = message_queue.get(block=True, timeout=.5)
         except Empty as e:
-            raise Exception('error, queue is empty. did server disconnect?') from e
+            # if no message within .5 refresh
+            streamlit_loop.call_soon_threadsafe(notify)
+            # raise Exception('error, queue is empty. did server disconnect?') from e
         else:
             parse_message(message)
 
-            # Refresh app + message queue every 0.1 seconds
+            # Refresh app + message queue every 0.1 seconds after each message
             time.sleep(.1)
             streamlit_loop.call_soon_threadsafe(notify)
 

@@ -21,6 +21,8 @@ def init_game():
     st.session_state.buzzer_locked = False
     st.session_state.buzzer_id = None
     st.session_state.my_buzzer = False
+    st.session_state.question_timer = None
+    st.session_state.timing_down = False
 
 def buzzer_callback():
     if st.session_state.buzzer_phase == True:

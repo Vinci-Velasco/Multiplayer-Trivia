@@ -3,6 +3,7 @@ import pickle
 import time
 import streamlit as st
 import client
+import time
 
 ## update a Player in the game
 def update_player(update, player_data):
@@ -40,9 +41,10 @@ def update_player(update, player_data):
                 players[id].has_lock = True
                 st.session_state.buzzer_locked = True
                 st.session_state.buzzer_id = id
-                
                 if players[id].is_me:
                     st.session_state.my_buzzer = True
+                    st.session_state.question_timer = time.time()
+                    print("hi")
 
 
 ## Store incoming data into Streamlit session state
@@ -142,7 +144,6 @@ def update_data(label, data):
 
     elif label == "Buzzing":
         buzz_id = int(data)
-    
         if buzz_id == st.session_state.my_id:
             st.session_state.my_turn = True
 
@@ -154,7 +155,9 @@ def update_data(label, data):
 
     else:
         print(f"Error in Game! received unrecognized Send_Data label: {label}")
-    
+
+
+
 def update_game_state(game_state):
     if game_state == "START_GAME":
         print("Start Game!")

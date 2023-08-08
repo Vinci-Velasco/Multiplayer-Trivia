@@ -1,6 +1,7 @@
 import streamlit as st
 from client import send_data_to_server
 import time
+import asyncio
 #### Draw UI components
 # Called on each page update
 
@@ -83,7 +84,14 @@ def draw_game_title():
     elif st.session_state.answer_phase:
         if st.session_state.buzzer_locked == True:
             if st.session_state.my_buzzer == True:
-               st.title("Your turn!") 
+               
+               time_left = 10
+               if (st.session_state.question_timer != None):
+                   time_left = st.session_state.question_timer - time.time() + 10.99
+                   time_left = int(time_left)
+               title = st.title(f"Your turn! Time Remaining: {time_left}")
+            #    asyncio.create_task(watch(title, st.session_state.question_timer, st.session_state.timing_down))
+            #    print("asdf")
             else:
                st.title(f"Player {st.session_state.buzzer_id} has the buzzer!")
         else:
@@ -94,6 +102,29 @@ def draw_game_title():
         st.header(f"Q{question.id}. {question.question}")
     else:
         st.header("Loading question...")
+
+async def watch(test, timer, running):
+    print(st.session_state.question_timer)
+    print(st.session_state.timing_down)
+    if True:
+        print("")
+        st.session_state.timing_down = True
+        print("b")
+        running = True
+        print(timer)
+        while timer > 0:
+            if "question_timer" not in st.session_state:
+                break
+            timer = st.session_state.question_timer
+            # test.title(f"Your turn! Time Remaining: {timer}")
+            r = await asyncio.sleep(1)
+            if "question_timer" not in st.session_state:
+                break
+            st.session_state.question_timer -= 2
+            print(st.session_state.question_timer)
+        st.session_state.timing_down = False
+        print("e")
+
 
 def draw_game(buzzer_callback):
     global cols
