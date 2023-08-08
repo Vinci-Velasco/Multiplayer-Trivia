@@ -13,6 +13,7 @@ class Player():
         self.received_question = False
         self.has_lock = False
         self.entered_game_lobby = False
+        self.buzzed = False
 
     def increaseScore(self):
         self.score += 1
