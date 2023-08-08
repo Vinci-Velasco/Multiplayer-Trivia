@@ -15,7 +15,7 @@ def main():
         else:
             c2.write(f"{p.score}")
 
-    st.balloons()
+    # st.balloons()
 
 if __name__ == '__main__':
     main()
