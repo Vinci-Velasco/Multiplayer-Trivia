@@ -136,9 +136,10 @@ def update_data(label, data):
         # Send received question confirmation
         if question != None and st.session_state.my_player.received_question == False:
             st.session_state.current_question = question
-            
+
             st.session_state.my_player.received_question = True
             client.send_data_to_server(st.session_state.my_socket, "Received_Question", "")
+
     elif label == "Buzzing":
         buzz_id = int(data)
     
@@ -239,7 +240,6 @@ def update_lobby_state(lobby_state):
         return
 
     st.session_state.lobby_state = lobby_state
-
 
 def update_host_client(label, data):
     if 'im_host' in st.session_state and st.session_state.im_host == True:

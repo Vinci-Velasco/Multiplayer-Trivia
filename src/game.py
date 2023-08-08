@@ -28,7 +28,7 @@ def main():
         init_game()
     elif st.session_state.game_state == "INIT":
         client.req_data_from_server(st.session_state.my_socket, "game_state")
-    elif ('current_question' not in st.session_state or st.session_state.current_question == None):
+    elif ('current_question' not in st.session_state or st.session_state.current_question == None) and st.session_state.my_player.received_question == False:
         st.session_state.player_answer = "Null"
         st.session_state.host_choice = None
         st.session_state.current_question = None
@@ -45,6 +45,7 @@ def main():
         if 'host_choice' in st.session_state and st.session_state.host_choice != None:
             st.session_state.current_question = None
             st.session_state.host_choice = None
+            st.session_state.my_player.received_question = False
             init_game()
             st.experimental_rerun()
 

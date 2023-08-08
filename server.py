@@ -285,11 +285,16 @@ def parse_data_req(client, request, send_to_all=False):
     if request == "Question":
         current_question = game.current_question
 
-        if current_question != None and game.current_state == "SENDING_QUESTION":
+        if current_question != None:
             data = current_question
             serialize = True
             print("parse_data_request(Question):")
-            # send_state_update("Game", game.current_state, to_all=False, client=client)
+
+            global current_state
+            if current_state != "SENDING_QUESTION":
+                current_state = game.update_state("SENDING_QUESTION")
+                send_state_update("Game", current_state, to_all=False, client=client)
+
         else:
             return
 
@@ -491,6 +496,10 @@ if __name__ == "__main__":
 
             continue # needed because addr does not exist from message_queue.get() from the timer thread.
 
+        if current_state == "WAITING_FOR_BUZZ":
+            if game.all_players_viewed == True:
+                clear_received_question()
+                # send_player_update_to_all("Clear_Received", sender_id)
 
         #### Information about the Sender
         sender_id = PlayerNumber[addr][0]
@@ -582,6 +591,7 @@ if __name__ == "__main__":
         elif (tokens[0] == "Host_Choice"):
             choice = tokens[1]
             buzzer_id = get_playerid_who_has_lock()
+
             # Check if player who has lock exists
             if buzzer_id == None:
                 print("ERROR in Host_Choice: no player has the buzzer")
@@ -605,27 +615,30 @@ if __name__ == "__main__":
                 send_state_update("Game", current_state, to_all=True)
                 
             elif choice == "N":
+                # Remove Player's lock
                 clients[buzzer_id].player_data.has_lock = False
+                
+                # Update state
                 current_state = game.update_state("GOT_HOST_CHOICE")
+
                 send_message_to_all("Send_Data", "Host_Choice", "N")
                 send_state_update("Game", current_state, to_all=True)
 
             else:
                 print("(Host_Choice) error, unrecognized input")
-
-
+                
         elif (tokens[0] == "Answer"):
             answer_str = str(tokens[1])
+
+            current_state = game.update_state("WAITING_FOR_HOSTS_CHOICE")
+            send_state_update("Game", current_state, to_all=True)
+
             # send answer to host
             answer_came = send_answer_to_host(sender_id, event, answer_str)
 
             # re-create thread instance (needed to start a new timer thread again for the future)
             if answer_came:
                 time_thread = threading.Thread(target=buzz_timer, args=(message_queue,))
-
-                # Update clients that answer was received
-                current_state = game.update_state("WAITING_FOR_HOSTS_CHOICE")
-                send_state_update("Game", current_state, to_all=True)
 
                 answer_came = False
             
@@ -661,10 +674,6 @@ if __name__ == "__main__":
                 send_state_update("Game", "END_GAME", to_all=True)
                 break
 
-        if current_state == "WAITING_FOR_BUZZ":
-            if game.all_players_viewed == True:
-                clear_received_question()
-                send_player_update_to_all("Clear_Received", sender_id)
         elif(current_state == "END_GAME"):
             break
     
