@@ -1,5 +1,6 @@
 # functions to parse incoming messages to the Client, load the Data, and update Streamlit's session state
 import pickle
+import time
 import streamlit as st
 import client
 
@@ -135,6 +136,11 @@ def update_data(label, data):
         if buzz_id == st.session_state.my_id:
             st.session_state.my_turn = True
 
+    elif label == "Host_Choice":
+        choice = str(data)
+        if st.session_state.host_choice == None:
+            st.session_state.host_choice = choice
+
     else:
         print(f"Error in Game! received unrecognized Send_Data label: {label}")
     
@@ -166,7 +172,10 @@ def update_game_state(game_state):
             st.session_state.answer_phase = False
             st.session_state.buzzer_phase = False
             st.session_state.host_phase = True
-            remove_buzzer_lock(st.session_state.buzzer_id)
+    
+    elif game_state == "GOT_HOST_CHOICE":
+        st.session_state.host_phase = False
+        remove_buzzer_lock(st.session_state.buzzer_id)
 
     else:
         print(f"Error! client received unrecognized game_state: {game_state}")
@@ -200,7 +209,7 @@ def update_lobby_state(lobby_state):
         if st.session_state.min_players == False:
             st.session_state.min_players = True
 
-        if ('host_id' in st.session_state) and 'ready_up' not in st.session_state:
+        if ('host_id' in st.session_state):
             st.session_state.ready_up = True
 
     elif lobby_state == "START_GAME":
@@ -238,6 +247,6 @@ def remove_buzzer_lock(buzzer_id):
             players[buzzer_id].has_lock == False
             st.session_state.buzzer_locked = False
             st.session_state.buzzer_id = None
-            
+
             if players[buzzer_id].is_me:
                 st.session_state.my_buzzer = False

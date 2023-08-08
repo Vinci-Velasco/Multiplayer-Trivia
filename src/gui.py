@@ -77,7 +77,7 @@ def draw_lobby(cols, players, vote_callback, ready_callback):
     return cols
 
 def draw_game_title():
-    if st.session_state.host_phase:
+    if st.session_state.host_phase == True:
         st.title("Host is checking answer...")
 
     elif st.session_state.answer_phase:
@@ -103,6 +103,18 @@ def draw_game(buzzer_callback):
     ## only show Buzzer button during Buzzer phase
     if st.session_state.buzzer_phase == True:
         cols[2].button('Buzzer', on_click=buzzer_callback, use_container_width=True)
+    elif st.session_state.host_choice != None:
+        if st.session_state.host_choice == "Y":
+                st.toast("Correct answer!")
+                time.sleep(0.5)
+        elif st.session_state.host_choice == "N":
+                st.toast("Wrong answer.")
+                time.sleep(0.5)
+
+        if 'current_question' in st.session_state:
+            del st.session_state['current_question']
+
+        st.experimental_rerun()
 
     ## Start Answer phase when some player has_lock
     elif st.session_state.answer_phase == True and st.session_state.buzzer_locked == True:
@@ -114,28 +126,42 @@ def draw_game(buzzer_callback):
             
     ## Start Host phase when host is verifying answer
     elif st.session_state.host_phase == True:
+        if st.session_state.player_answer != "Null":
+            st.info(f"Your answer: \"{st.session_state.player_answer}\"")
+
         st.write("Waiting for Host to verify answer...")
     
     else:
         with st.spinner("Loading..."):
             time.sleep(0.2)
     
-    return cols
-
 def draw_host_game():
     global cols
     c1, c2, c3 = st.columns(3, gap="large")
     cols = { 1: c1, 2: c2, 3: c3}
 
     if st.session_state.buzzer_phase == True:
-        st.write("You are the host. This is the Buzzer phase.")
-    elif st.session_state.answer_phase:
-        st.subheader("You are the host, someone is answering")
-    elif st.session_state.host_phase:
+        st.write("You are the host.")
+    elif st.session_state.host_choice != None:
+        if st.session_state.host_choice == "Y":
+                st.toast("Correct answer!")
+                time.sleep(0.5)
+        elif st.session_state.host_choice == "N":
+                st.toast("Wrong answer.")
+                time.sleep(0.5)
+
+        if 'current_question' in st.session_state:
+            del st.session_state['current_question']
+
+        st.experimental_rerun()
+           
+    elif st.session_state.answer_phase == True and st.session_state.buzzer_locked == True:
+        buzzer_id = st.session_state.buzzer_id
+        st.write(f"You are the Host. Player {buzzer_id} has the buzzer. Waiting...")        
+
+    elif st.session_state.host_phase == True:
         host_turn()
         
-    return cols
-
 def player_turn():
     with cols[2]:
         input_container = st.empty()
@@ -150,7 +176,6 @@ def player_turn():
         sent = True
         # Clear input box
         input_container.empty()
-        st.info(f"sent answer: \"{answer}\"")
     
 def host_turn():
     question = st.session_state.current_question

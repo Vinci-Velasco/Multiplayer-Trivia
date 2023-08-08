@@ -9,6 +9,7 @@ class Game():
         self.last_state = "START_GAME"
         self.current_question = None
         self.host = host
+        self.next_question = False
     
     def update_state(self, new_state):
         self.last_state = self.current_state
@@ -38,6 +39,9 @@ class Game():
             return "END_GAME"
         
         ## Server will send out the question in this state to everyoe
+        elif state == "START_GAME":
+            return self.update_state("SENDING_QUESTION")
+
         elif state == "SENDING_QUESTION":     
             total_views = did_all_players_view_question(player_list)
 
@@ -65,8 +69,11 @@ class Game():
         ## Received Host's verification. Clients will wait until server finishes transitioning into the next level of the Game.
         elif state == "GOT_HOST_CHOICE":
             #server should give a player a point if they got the answer correct (not sure if we move on to a different question if client is wrong)
-            return "GOT_HOST_CHOICE"
-            #SERVER can manually decide to change state to sending question or back to waiting for buzz
+            self.current_question = None
+            if self.next_question == True:
+                return self.update_state("SENDING_QUESTION")
+            else:
+                return self.update_state("GOT_HOST_CHOICE")
 
         #server says game is over and which player won/display all points?
         elif state == "GAME_OVER":
@@ -128,10 +135,7 @@ def get_state(players, last_state):
     
     #server should give a player a point if they got the answer correct (not sure if we move on to a different question if client is wrong)
     elif last_state == "GOT_HOST_CHOICE":
-
-        
         return "GOT_HOST_CHOICE"
-
         #SERVER can manually decide to change state to sending question or back to waiting for buzz
 
     #server says game is over and which player won/display all points?

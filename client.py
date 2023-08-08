@@ -94,8 +94,9 @@ def parse_message(message):
         data = message['data']
 
         client_messages.update_host_client(label, data)
+    
     else:
-        print("LOL FAIL")
+        print("client.py parse_data() error: unexpected header")
 
 def ready_up_test():
     HOST = "127.0.0.1"
