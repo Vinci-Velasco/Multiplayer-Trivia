@@ -5,6 +5,11 @@ import client
 
 cols = {}
 
+def end_game():
+    st.session_state.game_over = True
+    print("Game over!")
+    st.experimental_rerun()
+
 def init_game():
     if "game_state" not in st.session_state:
         st.session_state.game_state = "INIT"
@@ -24,7 +29,9 @@ def buzzer_callback():
         st.session_state.buzzer_phase = False
 
 def main():
-    if 'game_state' not in st.session_state:
+    if 'game_over' in st.session_state:
+        end_game()
+    elif 'game_state' not in st.session_state:
         init_game()
     elif st.session_state.game_state == "INIT":
         client.req_data_from_server(st.session_state.my_socket, "game_state")
@@ -42,14 +49,12 @@ def main():
         else: 
             gui.draw_game(buzzer_callback)
         
-        if 'host_choice' in st.session_state and st.session_state.host_choice != None:
+        if 'host_choice' in st.session_state and st.session_state.host_choice != None and 'game_over' not in st.session_state:
             st.session_state.current_question = None
             st.session_state.host_choice = None
             st.session_state.my_player.received_question = False
             init_game()
             st.experimental_rerun()
-
-    st.write(st.session_state)
 
 if __name__ == '__main__':
     main()

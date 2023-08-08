@@ -552,17 +552,21 @@ if __name__ == "__main__":
                 clients[buzzer_id].player_data.increaseScore()
                 print(f"(Host_Choice) player {buzzer_id} gets 1 point")
 
-                # Remove Player's lock
-                clients[buzzer_id].player_data.has_lock = False
+                if game.has_someone_won() == True:
+                    send_player_update_to_all("Score", buzzer_id)
+                    current_state = game.update_state("GAME_OVER")
+                else:
+                    # Remove Player's lock
+                    clients[buzzer_id].player_data.has_lock = False
 
-                # Update state to get new question on next loop
-                current_state = game.update_state("GOT_HOST_CHOICE")
-                game.next_question = True
+                    # Update state to get new question on next loop
+                    current_state = game.update_state("GOT_HOST_CHOICE")
+                    game.next_question = True
 
-                # Notify all clients about score update and Host_Choice
-                send_player_update_to_all("Score", buzzer_id)
-                send_message_to_all("Send_Data", "Host_Choice", "Y")
-                send_state_update("Game", current_state, to_all=True)
+                    # Notify all clients about score update and Host_Choice
+                    send_player_update_to_all("Score", buzzer_id)
+                    send_message_to_all("Send_Data", "Host_Choice", "Y")
+                    send_state_update("Game", current_state, to_all=True)
                 
             elif choice == "N":
                 # Remove Player's lock
@@ -609,12 +613,12 @@ if __name__ == "__main__":
                 print("game_loop, state_changed() = True: ")
                 send_state_update("Game", current_state, to_all=True)
         
-        ## Check if game is over
+        ## Handle special game state cases
+        # Check if game is over
         if game.has_someone_won() == True:
             current_state = game.update_state("GAME_OVER")
-
-        ## Handle special game state cases
-        if game.next_question == True:
+        # Get next question
+        elif game.next_question == True:
             # Check if no more questions in question bank
             if question_bank:
                 game.current_question = get_next_question(question_bank)
@@ -625,9 +629,18 @@ if __name__ == "__main__":
             else:
                 current_state = game.update_state("GAME_OVER")
 
-        elif(current_state == "GAME_OVER"):
-            # Tell all clients game is over
-            send_state_update("Game", "GAME_OVER", to_all=True)
+        # end game
+        if(current_state == "GAME_OVER"):
+            print("Game over!")
             break
-    
+            
+   # Tell all clients game is over
+
+    final_players = pickle.dumps(game.player_list)
+
+    send_message_to_all("Send_Data", "players_in_lobby", data=final_players)
+
+    send_state_update("Game", "GAME_OVER", to_all=True)
+
+
     ## TODO: at the end of gameloop, send all clients final copy of the player list for scoreboard
