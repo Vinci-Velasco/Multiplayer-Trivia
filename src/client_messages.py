@@ -12,6 +12,9 @@ def update_player(update, player_data):
         player = pickle.loads(player_data)
         id = player.id
         players[id] = player
+    elif update == "Clear_Received":
+        if 'my_player' in st.session_state:
+            st.session_state.my_player.received_question = False
     else: # update attributes only if player with this ID exists
         id = int(player_data)
         if id in players: 
@@ -129,7 +132,13 @@ def update_data(label, data):
         
     elif label == "Question":
         question = pickle.loads(data)
-        st.session_state.current_question = question
+        
+        # Send received question confirmation
+        if question != None and st.session_state.my_player.received_question == False:
+            st.session_state.current_question = question
+            
+            st.session_state.my_player.received_question = True
+            client.send_data_to_server(st.session_state.my_socket, "Received_Question", "")
     elif label == "Buzzing":
         buzz_id = int(data)
     
@@ -138,8 +147,9 @@ def update_data(label, data):
 
     elif label == "Host_Choice":
         choice = str(data)
-        if st.session_state.host_choice == None:
-            st.session_state.host_choice = choice
+        st.session_state.host_choice = choice
+        st.session_state.host_phase = False
+        remove_buzzer_lock(st.session_state.buzzer_id)
 
     else:
         print(f"Error in Game! received unrecognized Send_Data label: {label}")
@@ -155,6 +165,7 @@ def update_game_state(game_state):
             # Send Question Confirmation to server
             st.session_state.my_player.received_question = True
             client.send_data_to_server(st.session_state.my_socket, "Received_Question", "")
+
     
     elif game_state == "WAITING_FOR_BUZZ":
         # this is the only time buzzer should be open
@@ -172,10 +183,12 @@ def update_game_state(game_state):
             st.session_state.answer_phase = False
             st.session_state.buzzer_phase = False
             st.session_state.host_phase = True
+        else:
+            print('error during waiting_for_host_choice')
     
     elif game_state == "GOT_HOST_CHOICE":
-        st.session_state.host_phase = False
-        remove_buzzer_lock(st.session_state.buzzer_id)
+        pass
+        
 
     else:
         print(f"Error! client received unrecognized game_state: {game_state}")
@@ -205,6 +218,7 @@ def update_lobby_state(lobby_state):
             st.session_state.min_players = True
         if 'host_id' in st.session_state:
             st.session_state.ready_up = True 
+
     elif lobby_state == "READY_UP":
         if st.session_state.min_players == False:
             st.session_state.min_players = True
@@ -230,6 +244,7 @@ def update_lobby_state(lobby_state):
 def update_host_client(label, data):
     if 'im_host' in st.session_state and st.session_state.im_host == True:
         if label == "player_answer":
+            print("(host client) received player answer!")
             player_answer = str(data)
             st.session_state.player_answer = player_answer
         else:
@@ -241,12 +256,12 @@ def update_host_client(label, data):
 
 def remove_buzzer_lock(buzzer_id):
     if st.session_state.buzzer_locked == True and st.session_state.buzzer_id == buzzer_id:
-            players = st.session_state.players
+        players = st.session_state.players
 
-            # Remove lock from player
-            players[buzzer_id].has_lock == False
-            st.session_state.buzzer_locked = False
-            st.session_state.buzzer_id = None
+        # Remove lock from player
+        players[buzzer_id].has_lock == False
+        st.session_state.buzzer_locked = False
+        st.session_state.buzzer_id = None
 
-            if players[buzzer_id].is_me:
-                st.session_state.my_buzzer = False
+        if players[buzzer_id].is_me:
+            st.session_state.my_buzzer = False

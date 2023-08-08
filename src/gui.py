@@ -103,6 +103,7 @@ def draw_game(buzzer_callback):
     ## only show Buzzer button during Buzzer phase
     if st.session_state.buzzer_phase == True:
         cols[2].button('Buzzer', on_click=buzzer_callback, use_container_width=True)
+    
     elif st.session_state.host_choice != None:
         if st.session_state.host_choice == "Y":
                 st.toast("Correct answer!")
@@ -111,11 +112,8 @@ def draw_game(buzzer_callback):
                 st.toast("Wrong answer.")
                 time.sleep(0.5)
 
-        if 'current_question' in st.session_state:
-            del st.session_state['current_question']
-
-        st.experimental_rerun()
-
+        return
+   
     ## Start Answer phase when some player has_lock
     elif st.session_state.answer_phase == True and st.session_state.buzzer_locked == True:
             buzzer_id = st.session_state.buzzer_id
@@ -150,11 +148,8 @@ def draw_host_game():
                 st.toast("Wrong answer.")
                 time.sleep(0.5)
 
-        if 'current_question' in st.session_state:
-            del st.session_state['current_question']
+        return
 
-        st.experimental_rerun()
-           
     elif st.session_state.answer_phase == True and st.session_state.buzzer_locked == True:
         buzzer_id = st.session_state.buzzer_id
         st.write(f"You are the Host. Player {buzzer_id} has the buzzer. Waiting...")        
@@ -191,9 +186,7 @@ def host_turn():
 
     if correct:
         st.success("Correct!")
-
         send_data_to_server(st.session_state.my_socket, "Host_Choice", "Y") 
-        # TODO: get next question from server
     
     if incorrect:
         st.error("Wrong answer")

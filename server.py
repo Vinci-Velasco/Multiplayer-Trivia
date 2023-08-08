@@ -146,6 +146,8 @@ def clear_received_question():
     for c in clients.values():
          c.player_data.received_question = False
 
+    game.all_players_viewed = False
+
 def get_playerid_who_has_lock():
     for c in clients.values():
         p = c.player_data
@@ -286,16 +288,12 @@ def parse_data_req(client, request, send_to_all=False):
         if current_question != None and game.current_state == "SENDING_QUESTION":
             data = current_question
             serialize = True
-            send_state_update("Game", game.current_state, to_all=True)
+            print("parse_data_request(Question):")
+            # send_state_update("Game", game.current_state, to_all=False, client=client)
         else:
-            print("error sending question")
             return
 
     elif request == "game_state":
-        # if game.last_state == "START_GAME":
-        #     # send_state_update("Game", game.last_state, to_all=True)
-        #     game.update_state("SENDING_QUESTION")
-        # else:
         game.update_players(player_list=get_all_players())
         print("game_state: getting state")
         game_state = game.get_state()
@@ -425,7 +423,7 @@ if __name__ == "__main__":
                 clients[int(host.id)].player_data.is_host = True
 
             send_Host_To_All_Clients(host)
-            lobby.update_state("HOST_FOUND")
+            current_state = lobby.update_state("HOST_FOUND")
 
         # current_state = lobby.get_state()
         if lobby.state_changed() and lobby.last_state != "WAIT":
@@ -452,7 +450,6 @@ if __name__ == "__main__":
     answer_came = False
     give_player_point = False
     new_question = False
-    # current_state = "SENDING_QUESTION"
 
     # Initialize Game object that represents the internal Game state
     if host != None:
@@ -486,6 +483,7 @@ if __name__ == "__main__":
             # return to buzzer state
             print("Back to buzzer state!")
             current_state = game.update_state("WAITING_FOR_BUZZ")
+
             send_state_update("Game", current_state, to_all=True)
 
             event = threading.Event()
@@ -638,29 +636,35 @@ if __name__ == "__main__":
         #### Update internal Game State
         if current_state != game.current_state: # state was changed manually
             current_state = game.update_state(current_state)
+            print("game loop, current_state != game.current_state:")
             send_state_update("Game", current_state, to_all=True)
 
         else:
             game.update_players(player_list=get_all_players())
             current_state = game.get_state()
 
-            if game.state_changed():
+            if game.state_changed() == True:
+                print("game_loop, state_changed() = True: ")
                 send_state_update("Game", current_state, to_all=True)
 
         ## Handle special game state cases
-        if current_state == "SENDING_QUESTION" and game.next_question == True:
+        if game.next_question == True:
             # Check if no more questions in question bank
             if question_bank:
                 game.current_question = get_next_question(question_bank)
+
+                current_state = game.update_state("SENDING_QUESTION")
+
                 game.next_question = False
             else:
-                game.update_state("END_GAME")
+                current_state = game.update_state("END_GAME")
                 send_state_update("Game", "END_GAME", to_all=True)
                 break
 
         if current_state == "WAITING_FOR_BUZZ":
-            clear_received_question()
-            parse_data_req(sender_id, "players_in_lobby", send_to_all=True)
+            if game.all_players_viewed == True:
+                clear_received_question()
+                send_player_update_to_all("Clear_Received", sender_id)
         elif(current_state == "END_GAME"):
             break
     
