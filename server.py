@@ -629,6 +629,7 @@ if __name__ == "__main__":
 
         elif(current_state == "GAME_OVER"):
             # Tell all clients game is over
+            time.sleep(.5)
             send_state_update("Game", "GAME_OVER", to_all=True)
             break
     
