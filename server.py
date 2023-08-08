@@ -11,7 +11,7 @@ from src import player
 from src.question_bank import Question
 from game import lobby_state, game_state
 
-HOST = "127.0.0.1"
+HOST = "192.168.0.72"
 PORT = 7072
 
 clients = {} # key: id - value: Client
@@ -207,7 +207,7 @@ def get_host():
 def send_message_to_client(client, header, label, data):
     message = {"header": header, "label": label, "data": data}
     client.socket.sendall(pickle.dumps(message))
-
+    time.sleep(0.1)
     to_console = str(data)[:10] + "..."
     print(f"....sending message to Client {client.id}:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
 
@@ -227,6 +227,8 @@ def send_message_to_all(header, label, data, except_id=-1):
                 sent = True
         else:
             print(f"(send_message_to_all) skipped {c.id}")
+    
+    time.sleep(0.1)
 
     if sent: # Print to console if successful
         to_console = str(data)[:10] + "..."

@@ -51,7 +51,5 @@ def main():
             init_game()
             st.experimental_rerun()
 
-    st.write(st.session_state)
-
 if __name__ == '__main__':
     main()

@@ -1,5 +1,6 @@
 import streamlit as st
 import client
+import time
 from .gui import draw_lobby
 
 cols = {}
@@ -68,8 +69,6 @@ def main():
             ## Draw Lobby GUI
             global cols
             draw_lobby(cols, players, vote_callback, ready_callback)
-
-        st.write(st.session_state)
 
 if __name__ == '__main__':
     main()
