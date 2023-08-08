@@ -15,8 +15,10 @@ def main():
         ## display lobby
         if 'game_start' not in st.session_state:
             lobby.main()
-        else:
+        elif 'game_over' not in st.session_state:
             game.main()
+        else:
+            scoreboard.main()
 
 if __name__ == '__main__':
     if 'server_disconnect' not in st.session_state:

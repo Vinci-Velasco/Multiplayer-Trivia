@@ -6,16 +6,16 @@ def main():
     c1.subheader('Player')
     c2.subheader('Score')
 
-    players = st.session_state.player_list
+    players = st.session_state.players
 
-    for p in players:
+    for p in players.values():
         c1.write(f"Player {p.id}")
         if p.is_host:
             c2.write(f"<HOST>")
         else:
             c2.write(f"{p.score}")
 
-    st.balloons()
+    # st.balloons()
 
 if __name__ == '__main__':
     main()

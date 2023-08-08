@@ -29,19 +29,22 @@ def listening_thread(sock, message_queue):
             for m in message.split("\n"):
                 if m != "":
                     message_queue.put(m)
-            # update_queue(message_queue)
     
 #### Runs each time a new message arrives from the server to update the front-end
 def update_queue(message_queue):
     while True:
         try:
-            message = message_queue.get(block=True)
+            if 'my_socket' not in st.session_state:
+                break
+            message = message_queue.get(block=True, timeout=.5)
         except Empty as e:
-            raise Exception('error, queue is empty. did server disconnect?') from e
+            # if no message within .5 refresh
+            streamlit_loop.call_soon_threadsafe(notify)
+            # raise Exception('error, queue is empty. did server disconnect?') from e
         else:
             parse_message(message)
 
-            # Refresh app + message queue every 0.1 seconds
+            # Refresh app + message queue every 0.1 seconds after each message
             time.sleep(.1)
             streamlit_loop.call_soon_threadsafe(notify)
 
@@ -59,7 +62,7 @@ def req_data_from_server(s, request):
     print(f"...sending message to server: {message}\n")
     s.sendall(message.encode('utf8'))
 
-def send_data_to_server(s, header, data):
+def send_data_to_server(s, header, data=""):
     message = f"{header}-{data}\n"
     print(f"...sending message to server: {message}\n")
     s.sendall(message.encode('utf8'))
@@ -86,14 +89,16 @@ def parse_message(message):
             client_messages.update_lobby_state(state_data)
         elif label == "Game" and 'game_start' in st.session_state:
             client_messages.update_game_state(state_data)
-    else:
-        print("LOL FAIL")
+    
+    # Send player answers to the Host
+    elif message['header'] == "Host_Verify":
+        label = message['label']
+        data = message['data']
 
-#### Data Strings need to be decoded with utf8
-def req_data_string(s, string):
-    message = f"Req_Data-String-{string}\n" 
-    print(f"...sending message to server: {message}\n")
-    s.sendall(message.encode('utf8'))
+        client_messages.update_host_client(label, data)
+    
+    else:
+        print("client.py parse_data() error: unexpected header")
 
 def ready_up_test():
     HOST = "127.0.0.1"

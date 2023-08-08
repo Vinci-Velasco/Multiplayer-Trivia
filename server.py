@@ -4,13 +4,14 @@ import time
 import pickle
 import json
 import random
+import sys, os
 from queue import Queue
 
 from src import player
 from src.question_bank import Question
 from game import lobby_state, game_state
 
-HOST = "127.0.0.1"
+HOST = "192.168.0.72"
 PORT = 7072
 
 clients = {} # key: id - value: Client
@@ -41,7 +42,6 @@ def listening_thread(client_socket, addr, message_queue):
                     for m in message.split("\n"):
                         if m != "":
                             message_queue.put((m, addr))
-                    print(f"Recieved message from {addr}: {message}\n")
 
 # Custom thread class that creates new threads once connections come in
 class Recieve_Connection_Thread(threading.Thread):
@@ -91,7 +91,7 @@ class Recieve_Connection_Thread(threading.Thread):
     # server.accept() call. This is safer than killing the thread as it can terminate properly
     def stop(self):
         self.stop_connections = True
-        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((HOST, PORT))
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((HOST, port))
 
 class Client():
     def __init__(self, id, socket, addr, player):
@@ -115,6 +115,10 @@ def disconnect_client(client_socket):
         send_player_update_to_all("Disconnect", target.id)
 
         print(f"...closing inactive listening thread for client {target.id}")
+    if len(sys.argv) > 1:
+        print("exit")
+        os._exit(1)
+
 
 # Returns a list of Players from all connected clients
 def get_all_players():
@@ -138,43 +142,15 @@ def viewPlayerScore(client_id):
     players_data = client.player_data
     print(players_data.getScore())
 
-
-def allPlayersReady(ready_clients):
-    index = 0
-    proceedOrNot = True
-
-
-    for allClients in client_sockets:
-
-        if(ready_clients[index] == False):
-
-            for client in client_sockets:
-                # send data to all clients
-
-                #commented out until a solution for slowing down the rate of sending is found
-                #client.send(str(f"Waiting on Player {index + 1} to ready up!\n").encode("utf8"))
-                proceedOrNot = False
-
-        index += 1
-    return proceedOrNot
-
-def received_question_confirmation(sender_id):
-    clients[sender_id].player_data.received_question = True
-
-
 def clear_received_question():
+    for c in clients.values():
+         c.player_data.received_question = False
 
-    all_players = get_all_players()
-
-    index = 1
-    for p in all_players:
-
-         clients[index].player_data.received_question = False
-         index += 1
-
+    game.all_players_viewed = False
 
 def get_playerid_who_has_lock():
-    for p in all_players:
+    for c in clients.values():
+        p = c.player_data
         if p.has_lock == True:
             return p.id
 
@@ -182,15 +158,18 @@ def get_playerid_who_has_lock():
 
 def try_to_grab_buzz_lock(sender_id, time_thread):
 
-    for p in all_players:
+    for c in clients.values():
+        p = c.player_data
 
         #if anyone else has the lock DO NOT GIVE THE CALLING SENDER THE LOCK
-        if(p.has_lock == True and p.id != clients[sender_id].player_data.id):
-            print(f"Buzzing denied for player{sender_id}")
+        if p.has_lock == True and (p.id != sender_id):
+            print(f"Buzzing denied for player {sender_id}")
             return False
 
     clients[sender_id].player_data.has_lock = True
-    send_message_to_all("Send_Data", "Buzzing", sender_id)
+    # send_message_to_all("Send_Data", "Buzzing", sender_id)
+    send_player_update_to_all("Has_Lock", sender_id)
+    print("Start timer thread!")
 
     time_thread.start()
 
@@ -200,6 +179,7 @@ def buzz_timer(message_queue):
 
     # thread is no longer needed when answer is recieved and terminates normally
     if event.wait(TIMER):
+        print("good")
         return
 
     # no answer recived, so timeout message sent to message queue to communicate to the main thread
@@ -244,7 +224,7 @@ def send_everyones_scores(players):
 def send_message_to_client(client, header, label, data):
     message = {"header": header, "label": label, "data": data}
     client.socket.sendall(pickle.dumps(message))
-
+    time.sleep(0.1)
     to_console = str(data)[:10] + "..."
     print(f"....sending message to Client {client.id}:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
 
@@ -259,14 +239,17 @@ def send_message_to_all(header, label, data, except_id=-1):
 
             c.socket.sendall(pickle.dumps(message))
             to_console = str(data)[:10] + "..."
-            print(f"....sending message to Client from all {c.id}:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
+            print(f"(send_message_to_all) sending to {c.id}")
             if sent == False:
                 sent = True
-
-    if sent:
-
+        else:
+            print(f"(send_message_to_all) skipped {c.id}")
+    
+    if sent: # Print to console if successful
         to_console = str(data)[:10] + "..."
-        print("....sending message to all clients:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
+        print("....sent message to all clients:" + " { " + f"header: {header}, label: {label}, data: {to_console}" + " }\n")
+
+    time.sleep(0.1)
 
 
 #### Send an update to all clients about a specific Player
@@ -299,6 +282,7 @@ def parse_data_req(client, request, send_to_all=False):
     data = None
     serialize = False
 
+    ## LOBBY LOOP DATA REQUESTS
     if request == "my_id":
         data = client.id
 
@@ -317,6 +301,31 @@ def parse_data_req(client, request, send_to_all=False):
         print(f"lobby_state: sending state to all -> {lobby_state}")
         send_state_update("Lobby", lobby_state, to_all=True)
         return 
+
+    ## GAME LOOP DATA REQUESTS
+    if request == "Question":
+        current_question = game.current_question
+
+        if current_question != None:
+            data = current_question
+            serialize = True
+            print("parse_data_request(Question):")
+
+            global current_state
+            if current_state != "SENDING_QUESTION":
+                current_state = game.update_state("SENDING_QUESTION")
+            send_state_update("Game", current_state, to_all=False, client=client)
+
+        else:
+            return
+
+    elif request == "game_state":
+        game.update_players(player_list=get_all_players())
+        print("game_state: getting state")
+        game_state = game.get_state()
+        print(f"game_state: sending state to all -> {game_state}")
+        send_state_update("Game", game_state, to_all=True)
+        return 
     
     # Serialize data if needed
     if serialize == True:
@@ -333,39 +342,32 @@ def send_Host_To_All_Clients(host):
 def send_Start_Game_To_All_Clients():
     send_message_to_all("Send_Data", "lobby_state", "START_GAME")
 
-def hostChoice():
-    pass
-
 def add_host_vote(client, vote_id):
     clients[vote_id].player_data.votes += 1
     clients[client.id].player_data.already_voted = True
     # update all clients that this client has voted
     send_player_update_to_all("Already_Voted", client.id)
 
-def voteHost():
-    pass
-
-
 # Send answer from player to host so the host can confirm if the answer is correct. Returns True if it went through, False otherwise
-def answer(sender_id, event, message):
+def send_answer_to_host(sender_id, event, answer):
     # ensure if the person who sent the answer token actually has the lock
     if sender_id != get_playerid_who_has_lock():
         print(f"Answer from {sender_id} rejected")
         return False
-
+    
     # send answer to host
     host_client = get_host()
 
-    send_message_to_client(host_client, "Host_Verify", "player_answer", message)
+    print (f"Sending answer from {sender_id} to host {host_client.id}: {answer}\n")
 
-    # send_data_to_client(host_client, "String", message)
+    send_message_to_client(host_client, "Host_Verify", "player_answer", answer)
 
     # stop timer thread
     event.set()
     return True
 
-# Sends question from question bank to all clients
-def send_question(question_bank):
+# gets next question from question bank
+def get_next_question(question_bank):
     # select rand question
     num_of_questions = len(question_bank["questions"])
     rand_num = random.randint(0, num_of_questions-1)
@@ -373,24 +375,25 @@ def send_question(question_bank):
 
     q = Question(selected_question["id"], selected_question["question"], selected_question["answer"])
 
-    # serialize and send to all
-    q_data = pickle.dumps(q)
-    send_message_to_all("Send_Data", "Question", q_data)
-
     # avoid repeat questions
     question_bank["questions"].remove(selected_question)
 
 
-def buzzing():
-    pass
+    question = selected_question["question"]
+    print(f"(get_next_question) Q: {question}")
 
-#Token functions-------------------------------------------------------------------------------------
+    return q
+
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        print(sys.argv[1])
+        port = int(sys.argv[1])
     # setup server socket
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # SOCK_STREAM = TCP
-    server.bind((HOST, PORT))
+    server.bind((HOST, port))
     server.listen()
+    print(f'Port is: {port}')
 
     # data structures to hold client sockets and message queue so main can communicate with listening threads and vice versa
     client_sockets = []
@@ -398,38 +401,28 @@ if __name__ == "__main__":
     PlayerNumber = {}
     question_bank = load_question_bank()
 
-
-    ready_clients = [False, False, False, False, False]
     message_queue = Queue() # locks are already built in to Queue class
     recieve_connections_thread = Recieve_Connection_Thread(server, message_queue)
     recieve_connections_thread.start()
 
-    # #### Lobby loop ------------------------------------------------------------------
-    # host_found = False
-    # all_ready = False
-    # while not (all_ready and host_found):
-    #     #gets the message and its coresponding sender adderess
-    #     message, addr = message_queue.get()
-    #     print(message)
-
-    #### Lobby loop ------------------------------------------------------------------
-    host_found = False
-    all_ready = False
+#### Lobby Loop ==========================================================================================
 
     #### Internal Lobby states and values
+    lobby_loop = True
     host = None
-    total_votes = 0
     lobby = lobby_state.Lobby(player_list=get_all_players())
 
-    while not (all_ready and host_found):
-        #gets the message and its coresponding sender adderess
+    while lobby_loop:
+        # gets the message and its coresponding sender adderess
         message, addr = message_queue.get()
-
-        #### Information about the Sender
+       
+        # Information about the Sender
         sender_id = PlayerNumber[addr][0]
         client = clients[sender_id]
+        print(f"Recieved message from {sender_id} @ {addr}: {message}\n")
 
-        #### application layer protocol for lobby (Parse Tokens)
+        #Token Parse------------------------------------------------------------------
+
         tokens = message.split('-')
 
         if (tokens[0] == "Req_Data"):
@@ -450,224 +443,213 @@ if __name__ == "__main__":
         current_state = lobby.get_state()
         
         # Additionally calculate host and broadcast to all clients
-        if  current_state == "FIND_HOST" and lobby.host_found() == False:
-            host = lobby.calculate_host()
-            global players
-            clients[int(host.id)].player_data.is_host = True
+        if current_state == "FIND_HOST":
+            if lobby.host_found() == False:
+                host = lobby.calculate_host()
+                clients[int(host.id)].player_data.is_host = True
+
             send_Host_To_All_Clients(host)
-            lobby.update_state("HOST_FOUND")
-            host_found = True
-        current_state = lobby.get_state()
-        if lobby.state_changed():
+            current_state = lobby.update_state("HOST_FOUND")
+
+        # current_state = lobby.get_state()
+        if lobby.state_changed() and lobby.last_state != "WAIT":
             send_state_update("Lobby", current_state, to_all=True)
 
         if(current_state == "START_GAME"):
-           # time.sleep(10)
             break
-
-    #Token Parse------------------------------------------------------------------
 
     # close ability to connect
    
     recieve_connections_thread.stop()
     recieve_connections_thread.join()
 
-
-
     # send info to clients that main game has started
-    # ...
+    send_Start_Game_To_All_Clients()
 
     # set up the timer thread for buzzing
     event = threading.Event()
     time_thread = threading.Thread(target=buzz_timer, args=(message_queue,))
 
-   #Game Loop==========================================================================================
-    # main game loop
+#### Game Loop ==========================================================================================
     game_loop = True
     host_voted = False
     answer_came = False
     give_player_point = False
     new_question = False
-    current_state = "SENDING_QUESTION"
+
+    # Initialize Game object that represents the internal Game state
+    if host != None:
+        game = game_state.Game(host, player_list=get_all_players())
+        current_state = game.current_state
+        # initialize first question
+        game.current_question = get_next_question(question_bank)
+    else:
+        game = None
+        print("ERROR starting new Game: host not found")
+
     while game_loop:
 
-        # no more questions left
-        if len(question_bank) == 0:
-            break
+        # # End Game when no more questions left
+        # if len(question_bank) == 0:
+        #     game.update_state("END_GAME")
+        #     break
 
         message, addr = message_queue.get()
-        print(message)
 
         #enter if the answer timer ran out and someone actually buzzed in
         if message == "Timeout" and get_playerid_who_has_lock() is not None:
 
-            send_message_to_all("Send_Data", "Timeout", "timeout occured")
+            lock_id = get_playerid_who_has_lock()
 
-            #player who has lock loses it
-            clients[get_playerid_who_has_lock()].player_data.has_lock = False
+            # Timeout all clients, remove lock for players[lock_id]
+            send_message_to_all("Send_Data", "Timeout", lock_id)
 
-            #we go back to buzzing stage to so others can get a chance to buzz
-            print("Back to buzz!")
-            current_state = "WAITING_FOR_BUZZ"
+            clients[lock_id].player_data.has_lock = False
+
+            # return to buzzer state
+            print("Back to buzzer state!")
+            current_state = game.update_state("WAITING_FOR_BUZZ")
+
+            send_state_update("Game", current_state, to_all=True)
 
             event = threading.Event()
             time_thread = threading.Thread(target=buzz_timer, args=(message_queue,))
 
             continue # needed because addr does not exist from message_queue.get() from the timer thread.
 
+        if current_state == "WAITING_FOR_BUZZ":
+            if game.all_players_viewed == True:
+                clear_received_question()
+                # send_player_update_to_all("Clear_Received", sender_id)
 
         #### Information about the Sender
         sender_id = PlayerNumber[addr][0]
         client = clients[sender_id]
+        print(f"Recieved message from {sender_id} @ {addr}: {message}\n")
 
-        #### application layer protocol for lobby (Parse Tokens)
+        #Token Parse------------------------------------------------------------------
         tokens = message.split('-')
 
-
-        #### Handle Requests for Data from Sender
         if (tokens[0] == "Req_Data"):
             data_type = tokens[1]
             request = tokens[2]
-
             
-            #if an outdated request for the lobby state comes do nothing 
-            if(request == "lobby_state"):
-                continue
-            all_players = get_all_players()
- 
-            last_state = current_state
+            if request != "lobby_state":
+                parse_data_req(client, request)
 
-            #get the current state from the game_state file 
-            current_state = game_state.get_state(all_players, last_state)
+            # elif current_state == "GAME_OVER":
+            #     pass
+            #     #TODO: send everyone a message telling each client the game is over
+            #     #TODO: send everyoen the all_players list so each client can find out each persons score
+            #     #TODO: might send everyone which player id won
 
+            # elif current_state == "ENDING_GAME":
 
-            #send a single question out to everyone 
-            if current_state == "SENDING_QUESTION":
-                send_question(question_bank)
-
-            elif current_state == "WAITING_FOR_BUZZ":
-
-                #this sets everyone's recieved_question variable back to false
-                clear_received_question()
-
-            elif current_state == "WAITING_FOR_ANSWER":
-
-                #remove this when timer stuff gets added
-
-                if(answer_came):
-                    current_state = "GOT_ANSWER"
-                    answer_came = False
-                else:
-                    current_state = "WAITING_FOR_ANSWER"
+            #     #TODO: start shutting down threads
+            #     break
 
 
-            elif current_state == "WAITING_FOR_HOSTS_CHOICE":
+            # send_message_to_client(client, "Send_Data", "game_state", current_state)
 
-                #host_voted gets updated when a host_vote token is parsed
-                if(host_voted == False):
-                    current_state = "WAITING_FOR_HOSTS_CHOICE"
-                else:
-                    current_state = "GOT_HOST_CHOICE"
-                    host_voted = False
-
-            elif current_state == "GOT_HOST_CHOICE":
-
-                #give_player_point variable is changed by the host_choice function which Tony is working on
-                if(give_player_point == False):
-                    new_question = False
-                    give_player_point = False
-                    host_voted = False
-                    answer_came = False
-
-                    index = 1
-
-                    #goes through all players and takes away lock from player who buzzed without giving them a point
-                    #because host said their answer was wrong
-                    for p in all_players:
-
-                        if clients[index].player_data.has_lock == True:
-                            clients[index].player_data.has_lock = False
-
-                        index += 1
-
-
-                    current_state = "WAITING_FOR_BUZZ"
-
-                    print("------AFTER THE HOST HAS CHOSEN (should all be false)---------------\n")
-                    print((f"#1: {all_players[0].has_lock}\n"))
-                    print((f"#2: {all_players[1].has_lock}\n"))
-                    print((f"#3: {all_players[2].has_lock}\n"))
-                    print("=====================\n")
-
-                else:
-
-                    index = 1
-                    #goes through all players and takes away lock from player who buzzed but also give them a point
-                    for p in all_players:
-
-                        if clients[index].player_data.has_lock == True:
-                            clients[index].player_data.has_lock == False
-                            give_player_point = False
-                            host_voted = False
-                            answer_came = False
-                            new_question = True
-                            clients[index].player_data.increaseScore()
-                        index += 1
-
-                    #once a player gets the question right the server moves on to sending the next question
-                    current_state = "SENDING_QUESTION"
-
-                    #if someone has more than 5 points the the game ends
-                    if(game_state.has_someone_won(all_players)):
-                        current_state = "GAME_OVER"
-
-            elif current_state == "GAME_OVER":
-               
-                winnder_id = find_out_who_won(all_players)
-
-                send_message_to_all("Someone_has_won", "winner_id", winnder_id)
-
-                send_everyones_scores(all_players)
-        
-                current_state = "ENDING_GAME"
-
-            elif current_state == "ENDING_GAME":
-
-                #TODO: start shutting down threads
-                break
-
-
-            send_message_to_client(client, "Send_Data", "game_state", current_state)
-
-         
-
+            #     # send_data_to_client(client, data_type, current_state)
 
 
         elif (tokens[0] == "Buzzing"):
-
            #whoever gets the lock set their player.has_lock to true once the GOT_HOST_CHOICE is over
            try_to_grab_buzz_lock(sender_id, time_thread)
 
         elif (tokens[0] == "Host_Choice"):
+            choice = tokens[1]
+            buzzer_id = get_playerid_who_has_lock()
 
-            host_voted = True
+            # Check if player who has lock exists
+            if buzzer_id == None:
+                print("ERROR in Host_Choice: no player has the buzzer")
+                break
 
-            if(tokens[1] == "Y"):
-               give_player_point = True
+            if choice == "Y":
+                # Update Player's score
+                clients[buzzer_id].player_data.increaseScore()
+                print(f"(Host_Choice) player {buzzer_id} gets 1 point")
+
+                # Remove Player's lock
+                clients[buzzer_id].player_data.has_lock = False
+
+                # Update state to get new question on next loop
+                current_state = game.update_state("GOT_HOST_CHOICE")
+                game.next_question = True
+
+                # Notify all clients about score update and Host_Choice
+                send_player_update_to_all("Score", buzzer_id)
+                send_message_to_all("Send_Data", "Host_Choice", "Y")
+                send_state_update("Game", current_state, to_all=True)
+                
+            elif choice == "N":
+                # Remove Player's lock
+                clients[buzzer_id].player_data.has_lock = False
+                
+                # Update state
+                current_state = game.update_state("GOT_HOST_CHOICE")
+
+                send_message_to_all("Send_Data", "Host_Choice", "N")
+                send_state_update("Game", current_state, to_all=True)
+
             else:
-               give_player_point = False
-
+                print("(Host_Choice) error, unrecognized input")
+                
         elif (tokens[0] == "Answer"):
-            answer_came = answer(PlayerNumber[addr][0], event, tokens[1])
+            answer_str = str(tokens[1])
+
+            current_state = game.update_state("WAITING_FOR_HOSTS_CHOICE")
+            send_state_update("Game", current_state, to_all=True)
+
+            # send answer to host
+            answer_came = send_answer_to_host(sender_id, event, answer_str)
 
             # re-create thread instance (needed to start a new timer thread again for the future)
-            if answer_came:
+            if answer_came == True:
+                event = threading.Event()
                 time_thread = threading.Thread(target=buzz_timer, args=(message_queue,))
 
+                answer_came = False
+            
         elif (tokens[0] == "Received_Question"):
+            # Confirmation that Sender has received the question
+            clients[sender_id].player_data.received_question = True
+        
+        #### Update internal Game State
+        if current_state != game.current_state: # if state was changed manually
+            current_state = game.update_state(current_state)
+            print("game loop, current_state != game.current_state:")
+            send_state_update("Game", current_state, to_all=True)
+        else: # update state
+            game.update_players(player_list=get_all_players())
+            current_state = game.get_state()
 
-            #whoever sends this must have their player.received_question set to true and will be changed once the waiting for buzz state is entered
-            received_question_confirmation(sender_id)
+            if game.state_changed() == True:
+                print("game_loop, state_changed() = True: ")
+                send_state_update("Game", current_state, to_all=True)
+        
+        ## Check if game is over
+        if game.has_someone_won() == True:
+            current_state = game.update_state("GAME_OVER")
 
+        ## Handle special game state cases
+        if game.next_question == True:
+            # Check if no more questions in question bank
+            if question_bank:
+                game.current_question = get_next_question(question_bank)
 
-        #Token Parse------------------------------------------------------------------
+                current_state = game.update_state("SENDING_QUESTION")
+
+                game.next_question = False
+            else:
+                current_state = game.update_state("GAME_OVER")
+
+        elif(current_state == "GAME_OVER"):
+            # Tell all clients game is over
+            time.sleep(.5)
+            send_state_update("Game", "GAME_OVER", to_all=True)
+            break
+    
+    ## TODO: at the end of gameloop, send all clients final copy of the player list for scoreboard
