@@ -1,6 +1,7 @@
 #### Application logic for game
 # use list of Players, not Client
 MIN_PLAYERS = 3
+MIN_SCORE_TO_WIN = 3
 
 class Game():
     def __init__(self, host, player_list=[]):
@@ -29,6 +30,14 @@ class Game():
                 return True
 
         return False 
+    
+    def has_someone_won(self):
+        players = self.player_list
+        for p in players:
+            if p.score >= MIN_SCORE_TO_WIN:
+                return True
+            
+        return False
     
     #### Get current state of Game
     def get_state(self):
@@ -75,12 +84,8 @@ class Game():
 
         #server says game is over and which player won/display all points?
         elif state == "GAME_OVER":
-            return "ENDING_GAME"
+            return "GAME_OVER"
 
-        #actually start shutting game down
-        elif state == "ENDING_GAME":
-            pass
-    
         return "Game_INVALID_STATE_GAME"
         
     
@@ -163,14 +168,3 @@ def did_somone_buzz(players):
             return True
 
     return False 
-
-def has_someone_won(players):
-
-    #If a player gets 3 questions right the game ends (can change number as needed)
-    for p in players:
-        if p.score >= 3:
-            return True
-        
-    return False
-       
-       

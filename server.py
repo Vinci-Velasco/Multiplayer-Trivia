@@ -169,6 +169,7 @@ def try_to_grab_buzz_lock(sender_id, time_thread):
     clients[sender_id].player_data.has_lock = True
     # send_message_to_all("Send_Data", "Buzzing", sender_id)
     send_player_update_to_all("Has_Lock", sender_id)
+    print("Start timer thread!")
 
     time_thread.start()
 
@@ -293,7 +294,7 @@ def parse_data_req(client, request, send_to_all=False):
             global current_state
             if current_state != "SENDING_QUESTION":
                 current_state = game.update_state("SENDING_QUESTION")
-                send_state_update("Game", current_state, to_all=False, client=client)
+            send_state_update("Game", current_state, to_all=False, client=client)
 
         else:
             return
@@ -516,57 +517,6 @@ if __name__ == "__main__":
             if request != "lobby_state":
                 parse_data_req(client, request)
 
-             # elif current_state == "GOT_HOST_CHOICE":
-
-            #     #give_player_point variable is changed by the host_choice function which Tony is working on
-            #     if(give_player_point == False):
-            #         new_question = False
-            #         give_player_point = False
-            #         host_voted = False
-            #         answer_came = False
-
-            #         index = 1
-
-            #         #goes through all players and takes away lock from player who buzzed without giving them a point
-            #         #because host said their answer was wrong
-            #         for p in all_players:
-
-            #             if clients[index].player_data.has_lock == True:
-            #                 clients[index].player_data.has_lock = False
-
-            #             index += 1
-
-
-            #         current_state = "WAITING_FOR_BUZZ"
-
-            #         print("------AFTER THE HOST HAS CHOSEN (should all be false)---------------\n")
-            #         print((f"#1: {all_players[0].has_lock}\n"))
-            #         print((f"#2: {all_players[1].has_lock}\n"))
-            #         print((f"#3: {all_players[2].has_lock}\n"))
-            #         print("=====================\n")
-
-            #     else:
-
-            #         index = 1
-            #         #goes through all players and takes away lock from player who buzzed but also give them a point
-            #         for p in all_players:
-
-            #             if clients[index].player_data.has_lock == True:
-            #                 clients[index].player_data.has_lock == False
-            #                 give_player_point = False
-            #                 host_voted = False
-            #                 answer_came = False
-            #                 new_question = True
-            #                 clients[index].player_data.increaseScore()
-            #             index += 1
-
-            #         #once a player gets the question right the server moves on to sending the next question
-            #         current_state = "SENDING_QUESTION"
-
-            #         #if someone has more than 5 points the the game ends
-            #         if(game_state.has_someone_won(all_players)):
-            #             current_state = "GAME_OVER"
-
             # elif current_state == "GAME_OVER":
             #     pass
             #     #TODO: send everyone a message telling each client the game is over
@@ -637,7 +587,7 @@ if __name__ == "__main__":
             answer_came = send_answer_to_host(sender_id, event, answer_str)
 
             # re-create thread instance (needed to start a new timer thread again for the future)
-            if answer_came:
+            if answer_came == True:
                 time_thread = threading.Thread(target=buzz_timer, args=(message_queue,))
 
                 answer_came = False
@@ -647,18 +597,21 @@ if __name__ == "__main__":
             clients[sender_id].player_data.received_question = True
         
         #### Update internal Game State
-        if current_state != game.current_state: # state was changed manually
+        if current_state != game.current_state: # if state was changed manually
             current_state = game.update_state(current_state)
             print("game loop, current_state != game.current_state:")
             send_state_update("Game", current_state, to_all=True)
-
-        else:
+        else: # update state
             game.update_players(player_list=get_all_players())
             current_state = game.get_state()
 
             if game.state_changed() == True:
                 print("game_loop, state_changed() = True: ")
                 send_state_update("Game", current_state, to_all=True)
+        
+        ## Check if game is over
+        if game.has_someone_won() == True:
+            current_state = game.update_state("GAME_OVER")
 
         ## Handle special game state cases
         if game.next_question == True:
@@ -670,11 +623,11 @@ if __name__ == "__main__":
 
                 game.next_question = False
             else:
-                current_state = game.update_state("END_GAME")
-                send_state_update("Game", "END_GAME", to_all=True)
-                break
+                current_state = game.update_state("GAME_OVER")
 
-        elif(current_state == "END_GAME"):
+        elif(current_state == "GAME_OVER"):
+            # Tell all clients game is over
+            send_state_update("Game", "GAME_OVER", to_all=True)
             break
     
     ## TODO: at the end of gameloop, send all clients final copy of the player list for scoreboard

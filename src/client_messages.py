@@ -188,8 +188,13 @@ def update_game_state(game_state):
             print('error during waiting_for_host_choice')
     
     elif game_state == "GOT_HOST_CHOICE":
-        pass
-        
+        st.session_state.game_state = game_state
+        return
+
+    elif game_state == "GAME_OVER":
+        st.session_state.game_over = True
+        st.session_state.game_state = game_state
+        st.experimental_rerun()
 
     else:
         print(f"Error! client received unrecognized game_state: {game_state}")

@@ -15,7 +15,7 @@ def main():
         ## display lobby
         if 'game_start' not in st.session_state:
             lobby.main()
-        elif 'game_end' not in st.session_state:
+        elif 'game_over' not in st.session_state:
             game.main()
         else:
             scoreboard.main()
